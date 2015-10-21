@@ -133,19 +133,19 @@
     use mod_surf
     implicit none
 
-    real(8) grid_spacing
-    integer x
+    real(8) :: grid_spacing
+    integer :: i
 
 ! Calculate grid
 
-     read(input,*) (box_length(x),x=1,3,1)
+     !read(input,*) (box_length(x),x=1,3,1)
 
      coord = 0
 !     grid_spacing = 1.0d0
      grid_spacing = 0.5d0
-     do x=1,3
-      coord(x) = 1 + nint(box_length(x) / grid_spacing)
-      gspacing(x) = box_length(x)/(coord(x) - 1)
+     do i=1,3
+      coord(i) = 1 + nint(box_length(i) / grid_spacing)
+      gspacing(i) = box_length(i)/(coord(i) - 1)
      enddo
 
     end subroutine

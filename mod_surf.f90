@@ -4,30 +4,30 @@
 ! Define global variables:
 ! ========================
 ! Constants and input parameters:
-    real(8) xi,ximin2,ximin4,ninxisq,phi3xi,const,prefac
-    real(8) :: pi=3.1415926535897931d0
-    real(8) box_length(3),gspacing(3)
-    real(8) xscratch,yscratch,zscratch
-    integer coord(3)
+    real(8) :: xi,ximin2,ximin4,ninxisq,phi3xi,const,prefac
+    real(8), parameter :: pi=atan(1.d0)
+    real(8), dimension(3) :: box_length, gspacing
+    real(8) :: xscratch,yscratch,zscratch
+    integer :: coord(3)
 
 ! Surface variables:
     real(8), allocatable :: surf2(:,:,:,:),surf(:,:,:,:)
     real(8), allocatable :: gradient(:,:,:,:), mixed(:,:,:)
     real(8), allocatable :: zheight(:,:)
-    real(8) grad_interp(3)
-    real(8) vec1(3),vec2(3),vec3(3)
+    real(8), dimension(3) :: grad_interp(3), vec1(3),vec2(3),vec3(3)
 
 ! Atoms, their names and positions:
-    integer num_frames,num_atom
+    integer :: num_frames,num_atom
     character(len=3), allocatable :: atom_name(:)
     real(8), allocatable :: atom_position(:,:)
-    integer, allocatable :: oxygen_list(:)
-    real(8) unit_cell(3,3),unit_cell_inv(3,3)
+    !integer, allocatable :: oxygen_list(:)
+    real(8), dimension(3,3) :: unit_cell, unit_cell_inv
 
 ! Input and output:
-    character(len=32) dname,file_water,file_surface,file_dist
-    integer dat,f_wat,f_sur,f_dist
-    character(len=100) input,input1
+    character(len=32) :: dname,file_water,file_surface,file_dist
+    integer :: dat,f_wat,f_sur,f_dist,stride
+    character(len=100) :: input,input1
+    real(8) :: opref1, opref2
 
 ! Functions and subroutines:
     contains
@@ -35,7 +35,7 @@
     subroutine init_consts()
     implicit none
 
-     xi = 2.4d0
+     !xi = 2.4d0
      ximin2 = xi**(-2.d0)
      ximin4 = xi**(-4.d0)
      ninxisq = 9.d0 * xi**2
@@ -48,7 +48,7 @@
      real(8) function phi(rsq)
      implicit none
 
-     real(8) rsq
+     real(8) :: rsq
 
      if (rsq .ge. ninxisq) then
       phi = 0.d0
@@ -62,7 +62,7 @@
     real(8) function density_field_const(x,y,z)
     implicit none
 
-    real(8) x,y,z
+    real(8) :: x,y,z
 
     density_field_const = cal_density_field(x,y,z) - const
 
@@ -77,11 +77,11 @@
 
     cal_density_field = 0.d0
 
-    do w=1,num_atom/3
+    do w=1,num_atom
 ! Find the distance between this position and the position of the w-th oxygen atom by MIC:
-         r(1) = x - atom_position(oxygen_list(w),1)
-         r(2) = y - atom_position(oxygen_list(w),2)
-         r(3) = z - atom_position(oxygen_list(w),3)
+         r(1) = x - atom_position(w,1)
+         r(2) = y - atom_position(w,2)
+         r(3) = z - atom_position(w,3)
          do while (dabs(r(1)) .gt. 0.5d0*box_length(1))
           r(1) = r(1) - dsign(box_length(1),r(1))
          enddo
@@ -108,11 +108,11 @@
 
     grad(:) = 0.d0
 
-    do w=1,num_atom/3
+    do w=1,num_atom
 ! Find the distance between this position and the position of the w-th oxygen atom by MIC:
-         r(1) = x - atom_position(oxygen_list(w),1)
-         r(2) = y - atom_position(oxygen_list(w),2)
-         r(3) = z - atom_position(oxygen_list(w),3)
+         r(1) = x - atom_position(w,1)
+         r(2) = y - atom_position(w,2)
+         r(3) = z - atom_position(w,3)
          do while (dabs(r(1)) .gt. 0.5d0*box_length(1))
           r(1) = r(1) - dsign(box_length(1),r(1))
          enddo
@@ -147,11 +147,11 @@
     mixed_yz = 0.d0
     mixed_zz = 0.d0
 
-    do w=1,num_atom/3
+    do w=1,num_atom
 ! Find the distance between this position and the position of the w-th oxygen atom by MIC:
-         r(1) = x - atom_position(oxygen_list(w),1)
-         r(2) = y - atom_position(oxygen_list(w),2)
-         r(3) = z - atom_position(oxygen_list(w),3)
+         r(1) = x - atom_position(w,1)
+         r(2) = y - atom_position(w,2)
+         r(3) = z - atom_position(w,3)
          do while (dabs(r(1)) .gt. 0.5d0*box_length(1))
           r(1) = r(1) - dsign(box_length(1),r(1))
          enddo

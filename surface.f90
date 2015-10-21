@@ -6,7 +6,7 @@
     implicit none
 ! This program calculates the Chandler surface for liquid water from an inputted XYZ file.
 
-     integer w,frame
+     integer :: w,frame
      
 ! For now, unit cell is orthorhombic, so that the matrix is unity:
 
@@ -21,28 +21,40 @@
       stop
      endif 
 
-! Initialize constants:
 
-     call init_consts()
 
 ! Open input and output files and begin the I/O:
 
-     call getarg(1,dname)
-     call getarg(2,file_water)
-     call getarg(3,file_surface)
-     call getarg(4,file_dist)
+     !call getarg(1,dname)
+     !call getarg(2,file_water)
+     !call getarg(3,file_surface)
+     !call getarg(4,file_dist)
+     
+     open(unit=100, file='SURFACE_INPUT', status='old', action='read')
+     ! Read in arguments: dname traj file_surface, ...
+     read(100,'(3a,i)') dname, file_water, file_surface, stride
+     read(100,*) box_length(:)
+     read(100,*) xi, opref1, opref2
+     
+     
      call start_io()
+     
+     
+! Initialize constants:
+
+     call init_consts()
 
 ! Calculate grid:
 
      call calculate_grid()
 
      write(*,*) box_length
+
 ! Initialize arrays:
 
      allocate( atom_name(num_atom) )
      allocate( atom_position(num_atom,3) )
-     allocate( oxygen_list(num_atom / 3) )
+     !allocate( oxygen_list(num_atom / 3) )
      allocate( zheight(num_atom,2) )
 
      allocate( gradient(coord(1),coord(2),2,3) )
@@ -95,6 +107,6 @@
     close(dat)
     close(f_wat)
     close(f_sur)
-    deallocate( atom_name,atom_position,oxygen_list,surf,surf2,zheight,gradient,mixed )
+    deallocate( atom_name,atom_position,surf,surf2,zheight,gradient,mixed )
     end program
 ! ---------------------------------------------------------------------------------------------------------------------

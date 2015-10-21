@@ -23,9 +23,9 @@
 ! Read in number of atoms and use it to calculate number of frames:
      read(dat,*) num_atom
      num_frames = num_frames / (num_atom + 2)
-     read(dat,'(A)') input
-     input1 = input
-     input = adjustl(input(2:len(input)))
+     !read(dat,'(A)') input
+     !input1 = input
+     !input = adjustl(input(2:len(input)))
 
     end subroutine
 ! -----------------------------------------------------------------------------------------------------------------------------
@@ -33,8 +33,8 @@
     use mod_surf
     implicit none
 
-    integer frame,w,x,y
-    real(8) com(3),mass(3)
+    integer :: frame,x
+    !real(8) :: com(3),mass(3)
 
 ! Write to standard output at the beginning of the frame:
 
@@ -42,13 +42,16 @@
 
 ! Write frame headers to output files:
 
+10	  format(3f8.5)
+      
       write(f_wat,*) num_atom
-      write(f_wat,*) input1
+      write(f_wat,10) box_length(:)
+      
       write(f_sur,*) 2 * coord(1) * coord(2) + 2 * (coord(1)-1) * (coord(2)-1)
-!      write(f_sur,*) 2 * coord(1) * coord(2)
-      write(f_sur,*) input1
+      write(f_sur,10) box_length(:)
+      
       write(f_dist,*) num_atom
-      write(f_dist,*) input1
+      write(f_dist,10) box_length(:)
 
 ! Read-in frame from input file:
 
@@ -57,52 +60,27 @@
        read(dat,'(A)')
       endif
 
-      w = 1
       do x=1,num_atom
-       read(dat,*) atom_name(x),(atom_position(x,y),y=1,3,1)
-       if (atom_name(x) .eq. 'O') then
-        oxygen_list(w) = x
-        w = w + 1
-       endif
+       read(dat,*) atom_name(x), atom_position(x,:)
       enddo
 
-! Write atom position to output file; water molecules are folded back into the simulation box,
-! for aesthetic reasons:
+! Write atom positions to output file with PBC
 
-!       xscratch = atom_position(x,1)
-!       do while (xscratch .lt. 0.d0 .or. xscratch .gt. box_length(1))
-!        xscratch = xscratch - sign(box_length(1),xscratch)
-!       enddo
-!       yscratch = atom_position(x,2)
-!       do while (yscratch .lt. 0.d0 .or. yscratch .gt. box_length(2))
-!        yscratch = yscratch - sign(box_length(2),yscratch)
-!       enddo
+      do x=1,num_atom
 
-!       write(f_wat,*) atom_name(x),'    ',xscratch,'    ',yscratch,'    ',atom_position(x,3)
-!      enddo
-
-! Write atom positions to output file -- the centre of mass of each water molecule is folded back into
-! the simulation box, for aesthetic reasons:
-
-      do x=1,num_atom,3
-       mass(1) = 16.d0
-       mass(2) = 1.d0
-       mass(3) = 1.d0
-       com(:) = 0.d0
-
-       if (atom_name(x+1) .eq.'D') mass(2) = 2.d0
-       if (atom_name(x+2) .eq. 'D') mass(3) = 2.d0
-       do y=0,2
-        com(:) = com(:) + mass(y+1)*atom_position(x+y,:)
-       enddo
-       com(:) = com(:) / sum(mass)
+       !if (atom_name(x+1) .eq.'D') mass(2) = 2.d0
+       !if (atom_name(x+2) .eq. 'D') mass(3) = 2.d0
+       !do y=0,2
+       ! com(:) = com(:) + mass(y+1)*atom_position(x+y,:)
+       !enddo
+       !com(:) = com(:) / sum(mass)
 
 ! Apply periodic boundary conditions:
-       xscratch = com(1)
+       xscratch = atom_position(x,1)
        do while (xscratch .lt. 0.d0 .or. xscratch .gt. box_length(1))
         xscratch = xscratch - sign(box_length(1),xscratch)
        enddo
-       yscratch = com(2)
+       yscratch = atom_position(x,2)
        do while (yscratch .lt. 0.d0 .or. yscratch .gt. box_length(2))
         yscratch = yscratch - sign(box_length(2),yscratch)
        enddo
