@@ -27,7 +27,7 @@
     character(len=32) :: dname,file_water,file_surface,file_dist
     integer :: dat,f_wat,f_sur,f_dist,stride
     character(len=100) :: input,input1
-    real(8) :: opref1, opref2
+    real(8) :: opref(2)
 
 ! Functions and subroutines:
     contains
@@ -179,7 +179,6 @@
 
     end function
 ! ------------------------------------------------------------------------------------------------------------------------
-!    real(8) function mic(r)
     subroutine mic(r)
     implicit none
 
@@ -196,9 +195,5 @@
     enddo
 
     end subroutine
-
-!    mic = r(1)**2 + r(2)**2 + r(3)**2
-
-!    end function
 ! ------------------------------------------------------------------------------------------------------------------------
     end module

@@ -24,17 +24,14 @@
 
 
 ! Open input and output files and begin the I/O:
+!!! MODIFIED: read from standard input, passed by Launch.py
 
      !call getarg(1,dname)
      !call getarg(2,file_water)
      !call getarg(3,file_surface)
      !call getarg(4,file_dist)
      
-     open(unit=100, file='SURFACE_INPUT', status='old', action='read')
-     ! Read in arguments: dname traj file_surface, ...
-     read(100,'(3a,i)') dname, file_water, file_surface, stride
-     read(100,*) box_length(:)
-     read(100,*) xi, opref1, opref2
+     read(5,*) dname, file_water, file_surface, stride, box_length(:), opref(:), xi
      
      
      call start_io()
