@@ -16,18 +16,31 @@
      unit_cell(3,3) = 1.d0
      unit_cell_inv = unit_cell
 
+! Parse command line arguments
+    do i = 1, command_argument_count()
+       call get_command_argument(i, arg)
 
-! Open input and output files and begin the I/O:
-!!! MODIFIED: read from standard input, passed by Launch.py
+       select case (arg)
+       case ('-v', '--version')
+          print '(2a)', 'cmdline version ', version
+          stop
+       case ('-h', '--help')
+          call print_help()
+          stop
+       case ('-t', '--time')
+          do_time = .true.
+       case default
+          print '(a,a,/)', 'Unrecognized command-line option: ', arg
+          call print_help()
+          stop
+       end select
+    end do
 
-     !call getarg(1,dname)
-     !call getarg(2,file_water)
-     !call getarg(3,file_surface)
-     !call getarg(4,file_dist)
      
      read(5,*) dname, file_water, file_surface, stride, box_length(:), opref(:), xi
      
      
+! Open input and output files and begin the I/O:
      call start_io()
      
      
@@ -102,5 +115,19 @@
     close(f_wat)
     close(f_sur)
     deallocate( atoms,surf,surf2,zheight,gradient,mixed )
+
+    contains
+
+        subroutine print_help()
+          print '(a)', 'usage: cmdline [OPTIONS]'
+          print '(a)', ''
+          print '(a)', 'Without further options, cmdline prints the date and exits.'
+          print '(a)', ''
+          print '(a)', 'cmdline options:'
+          print '(a)', ''
+          print '(a)', '  -v, --version     print version information and exit'
+          print '(a)', '  -h, --help        print usage information and exit'
+          print '(a)', '  -t, --time        print time'
+        end subroutine print_help
     
 end program surface
