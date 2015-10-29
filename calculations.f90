@@ -194,7 +194,7 @@
       enddo
      enddo
 
-	write(*,*) gspacing
+    write(*,*) gspacing
 
 ! Find and draw the surface 'in-between' the grid points:
      xypoint(1) = 0.5d0 * gspacing(1)
@@ -216,59 +216,59 @@
 
     end subroutine
 ! -----------------------------------------------------------------------------------------------------------------------------
-    subroutine find_atom_height_grad(w)
-    use mod_surf
-    implicit none
-
-    integer w,gridx,gridy
-    real(8) xyzpoint(2),grad_interp1(3),grad_interp2(3)
-
-! What is the atom's height compared to the two surfaces? Folding the atom back into the box allows
-! this comparison to be carried out:
-
-    xscratch = atom_position(w,1)
-    do while (xscratch .lt. 0.d0 .or. xscratch .gt. box_length(1))
-     xscratch = xscratch - sign(box_length(1),xscratch)
-    enddo
-    yscratch = atom_position(w,2)
-    do while (yscratch .lt. 0.d0 .or. yscratch .gt. box_length(2))
-     yscratch = yscratch - sign(box_length(2),yscratch)
-    enddo
-
-! Find the (x,y) grid point such that (x,y),(x,y+1),(x+1,y),(x+1,y+1) bound this atom's (x,y) position:
-
-    gridx = floor(xscratch / gspacing(1))
-    gridy = floor(yscratch / gspacing(2))
-    xyzpoint(1) = (xscratch/gspacing(1)) - gridx
-    xyzpoint(2) = (yscratch/gspacing(2)) - gridy
-    xyzpoint(1) = xyzpoint(1) * gspacing(1)
-    xyzpoint(2) = xyzpoint(2) * gspacing(2)
-
-! Find the z positions of the two surfaces for this pair of (x,y) values, and thus the height
-! of the atom below both the upper and lower surface:
-
-    call int_surface(1,gridx+1,gridy+1,zheight(w,1),xyzpoint,grad_interp1)
-    call int_surface(2,gridx+1,gridy+1,zheight(w,2),xyzpoint,grad_interp2)
-    zheight(w,1) = zheight(w,1) - atom_position(w,3)
-    zheight(w,2) = atom_position(w,3) - zheight(w,2)
-!    if (dabs(zheight(w,1)) .gt. (0.5d0*box_length(3))) zheight(w,1) = zheight(w,1) - dsign(box_length(3),zheight(w,1))
-!    if (dabs(zheight(w,2)) .gt. (0.5d0*box_length(3))) zheight(w,2) = zheight(w,2) - dsign(box_length(3),zheight(w,2))
-    do while (dabs(zheight(w,1)) .gt. (0.5d0*box_length(3)))
-     zheight(w,1) = zheight(w,1) - dsign(box_length(3),zheight(w,1))
-    enddo
-    do while (dabs(zheight(w,2)) .gt. (0.5d0*box_length(3)))
-     zheight(w,2) = zheight(w,2) - dsign(box_length(3),zheight(w,2))
-    enddo
-
-! Find the unit vector normal to the surface at the (x,y) position of each atom.
-
-    if (zheight(w,1) .lt. zheight(w,2)) then
-     grad_interp = -1.d0 * grad_interp1
-    else if (zheight(w,2) .lt. zheight(w,1)) then
-     grad_interp = grad_interp2
-    else
-     write(*,*) 'Molecule is equidistant from the two surfaces -- more programming is needed!'
-     stop
-    endif
-
-    end subroutine
+!!!    subroutine find_atom_height_grad(w)
+!!!    use mod_surf
+!!!    implicit none
+!!!
+!!!    integer w,gridx,gridy
+!!!    real(8) xyzpoint(2),grad_interp1(3),grad_interp2(3)
+!!!
+!!!! What is the atom's height compared to the two surfaces? Folding the atom back into the box allows
+!!!! this comparison to be carried out:
+!!!
+!!!    xscratch = atom_position(w,1)
+!!!    do while (xscratch .lt. 0.d0 .or. xscratch .gt. box_length(1))
+!!!     xscratch = xscratch - sign(box_length(1),xscratch)
+!!!    enddo
+!!!    yscratch = atom_position(w,2)
+!!!    do while (yscratch .lt. 0.d0 .or. yscratch .gt. box_length(2))
+!!!     yscratch = yscratch - sign(box_length(2),yscratch)
+!!!    enddo
+!!!
+!!!! Find the (x,y) grid point such that (x,y),(x,y+1),(x+1,y),(x+1,y+1) bound this atom's (x,y) position:
+!!!
+!!!    gridx = floor(xscratch / gspacing(1))
+!!!    gridy = floor(yscratch / gspacing(2))
+!!!    xyzpoint(1) = (xscratch/gspacing(1)) - gridx
+!!!    xyzpoint(2) = (yscratch/gspacing(2)) - gridy
+!!!    xyzpoint(1) = xyzpoint(1) * gspacing(1)
+!!!    xyzpoint(2) = xyzpoint(2) * gspacing(2)
+!!!
+!!!! Find the z positions of the two surfaces for this pair of (x,y) values, and thus the height
+!!!! of the atom below both the upper and lower surface:
+!!!
+!!!    call int_surface(1,gridx+1,gridy+1,zheight(w,1),xyzpoint,grad_interp1)
+!!!    call int_surface(2,gridx+1,gridy+1,zheight(w,2),xyzpoint,grad_interp2)
+!!!    zheight(w,1) = zheight(w,1) - atom_position(w,3)
+!!!    zheight(w,2) = atom_position(w,3) - zheight(w,2)
+!!!!    if (dabs(zheight(w,1)) .gt. (0.5d0*box_length(3))) zheight(w,1) = zheight(w,1) - dsign(box_length(3),zheight(w,1))
+!!!!    if (dabs(zheight(w,2)) .gt. (0.5d0*box_length(3))) zheight(w,2) = zheight(w,2) - dsign(box_length(3),zheight(w,2))
+!!!    do while (dabs(zheight(w,1)) .gt. (0.5d0*box_length(3)))
+!!!     zheight(w,1) = zheight(w,1) - dsign(box_length(3),zheight(w,1))
+!!!    enddo
+!!!    do while (dabs(zheight(w,2)) .gt. (0.5d0*box_length(3)))
+!!!     zheight(w,2) = zheight(w,2) - dsign(box_length(3),zheight(w,2))
+!!!    enddo
+!!!
+!!!! Find the unit vector normal to the surface at the (x,y) position of each atom.
+!!!
+!!!    if (zheight(w,1) .lt. zheight(w,2)) then
+!!!     grad_interp = -1.d0 * grad_interp1
+!!!    else if (zheight(w,2) .lt. zheight(w,1)) then
+!!!     grad_interp = grad_interp2
+!!!    else
+!!!     write(*,*) 'Molecule is equidistant from the two surfaces -- more programming is needed!'
+!!!     stop
+!!!    endif
+!!!
+!!!    end subroutine

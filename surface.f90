@@ -8,8 +8,6 @@
 
      integer :: w,frame
 
-     type(Atom), allocatable :: atoms
-     
 ! For now, unit cell is orthorhombic, so that the matrix is unity:
 
      unit_cell(:,:) = 0.d0

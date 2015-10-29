@@ -42,6 +42,8 @@ module mod_surf
         character(len=2) :: symbol
     end type Atom
 
+    type(Atom), allocatable :: atoms(:)
+
 ! =============================
 ! Functions and subroutines
 ! =============================
@@ -104,6 +106,7 @@ module mod_surf
 
     integer :: w
     real(DP) :: x,y,z,r(3),rsq
+!    type(Atom), dimension(num_atoms) :: 
 
     density_field = 0.d0
 
@@ -128,6 +131,8 @@ module mod_surf
         implicit none
 
         real(DP), intent(in) :: x, y, z
+!        type(Atom), dimension(num_atoms) :: atoms
+        real(DP) :: r(3), rsq
 
         integer :: i
 
@@ -154,23 +159,22 @@ module mod_surf
 
 !--------------------------------------------------------------------------------------------------------------------------
 
-    subroutine calc_density_gradient(grad,x,y,z)
+    subroutine cal_density_gradient(grad,x,y,z)
     implicit none
 
     real(DP), intent(in) :: x,y,z
-    real(DP), intent(inout) :: r(3), grad(3)
-    real(DP) :: expterm, rsq
+    real(DP), intent(out) :: grad(3)
+    real(DP) :: expterm, rsq, r(3)
     integer :: w
+!    type(Atom), dimension(num_atoms) :: atoms
 
     grad = 0.d0
-    expsum = 0.0d0
-    opsum = 0.0d0
 
     atom_loop: do w=1,num_atom
 ! Find the distance between this position and the position of the w-th oxygen atom by MIC:
-         r(1) = x - atoms(i)%xyz(1)
-         r(2) = y - atoms(i)%xyz(2)
-         r(3) = z - atoms(i)%xyz(3)
+         r(1) = x - atoms(w)%xyz(1)
+         r(2) = y - atoms(w)%xyz(2)
+         r(3) = z - atoms(w)%xyz(3)
          call mic(r)
 
 ! Calculate the gradient:
@@ -185,7 +189,7 @@ module mod_surf
 
     return
 
-    end subroutine calc_density_gradient
+    end subroutine cal_density_gradient
 ! ------------------------------------------------------------------------------------------------------------------------
     subroutine cal_gradient(grad, x, y, z)
         implicit none
@@ -194,8 +198,9 @@ module mod_surf
         real(DP), intent(out), dimension(3) :: grad
 
         real(DP), dimension(3) :: op_grad, density_grad
-        real(DP) :: density_field, op_field
+        real(DP) :: density_field, op_field, rsq, r(3)
         integer :: i
+!        type(Atom), dimension(num_atoms) :: atoms
 
         grad = 0.d0
         op_grad = 0.d0
@@ -216,11 +221,11 @@ module mod_surf
 
 ! The gradient of our order-parameter field is a bit more complicated:
 !   we need the density field AND the op_field at the point of interest and then we combine all
-        density_field = calc_density_field(x,y,z)
+        density_field = cal_density_field(x,y,z)
         
         op_field = cal_op_field(x,y,z)
         
-        call calc_density_grad(density_grad,x,y,z)
+        call cal_density_gradient(density_grad,x,y,z)
 
 ! The gradient of our field, finally:
         grad(:) = ( density_field * op_grad(:) - density_grad(:) * op_field ) / ( density_field**2.d0 )
@@ -231,23 +236,25 @@ module mod_surf
     end subroutine cal_gradient
 ! ------------------------------------------------------------------------------------------------------------------------
     real(DP) function cal_mixed_term(x,y,z,density_field,grad)
-    implicit none
+    
+        implicit none
 
-    integer :: w
-    real(DP) :: x,y,z,r(3),rsq
-    real(DP) :: mixed_xy,mixed_xz,mixed_yz,mixed_zz,density_field,grad(3),expterm
+        integer :: w
+        real(DP) :: x,y,z,r(3),rsq
+        real(DP) :: mixed_xy,mixed_xz,mixed_yz,mixed_zz,density_field,grad(3),expterm
+!        type(Atom), dimension(num_atoms) :: atoms
 
-    cal_mixed_term = 0.d0
-    mixed_xy = 0.d0
-    mixed_xz = 0.d0
-    mixed_yz = 0.d0
-    mixed_zz = 0.d0
+        cal_mixed_term = 0.d0
+        mixed_xy = 0.d0
+        mixed_xz = 0.d0
+        mixed_yz = 0.d0
+        mixed_zz = 0.d0
 
-    do w=1,num_atom
+        do w=1,num_atom
 ! Find the distance between this position and the position of the w-th oxygen atom by MIC:
-            r(1) = x - atoms(i)%xyz(1)
-            r(2) = y - atoms(i)%xyz(2)
-            r(3) = z - atoms(i)%xyz(3)
+            r(1) = x - atoms(w)%xyz(1)
+            r(2) = y - atoms(w)%xyz(2)
+            r(3) = z - atoms(w)%xyz(3)
             call mic(r)
 
 ! Calculate the mixed term:
@@ -257,12 +264,12 @@ module mod_surf
          mixed_xz = mixed_xz + ( ximin4 * r(1) * r(3) * expterm)
          mixed_yz = mixed_yz + ( ximin4 * r(2) * r(3) * expterm)
          mixed_zz = mixed_zz - ( ximin4 * r(3) * r(3) * expterm)
-    enddo
+        enddo
 
-    cal_mixed_term = (mixed_xy / grad(3)) + (mixed_yz * grad(1) / (grad(3)**2)) + &
-     &     (mixed_xz * grad(2) / (grad(3)**2)) + &
-     &     (ximin2 * grad(1) * grad(2) * density_field / (grad(3)**3)) + &
-     &     (mixed_zz * grad(1) * grad(2) / (grad(3)**3))
+        cal_mixed_term = (mixed_xy / grad(3)) + (mixed_yz * grad(1) / (grad(3)**2)) + &
+            &     (mixed_xz * grad(2) / (grad(3)**2)) + &
+            &     (ximin2 * grad(1) * grad(2) * density_field / (grad(3)**3)) + &
+            &     (mixed_zz * grad(1) * grad(2) / (grad(3)**3))
 
     end function
 ! ------------------------------------------------------------------------------------------------------------------------
