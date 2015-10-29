@@ -16,8 +16,8 @@
 ! Firstly, take the centre of the box (box_length(1)/2,box_length(2)/2,0), and use Brent's algorithm
 ! to find the root of density_field(X,Y,z) - const = 0.d0 for this X and Y - thus find both surfaces.
 
-      found(:,:,:) = .false.
-      surf(:,:,:,:) = 0.d0
+      found = .false.
+      surf = 0.d0
       do x=1,coord(1)
        do y=1,coord(2)
         surf(x,y,:,1) = (x-1)*gspacing(1)
