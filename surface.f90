@@ -6,8 +6,7 @@
     implicit none
 ! This program calculates the Chandler surface for liquid water from an inputted XYZ file.
 
-     integer :: w, frame, narg
-     character(len=10) :: arg
+     integer :: w, frame
 
 ! For now, unit cell is orthorhombic, so that the matrix is unity:
 
@@ -125,7 +124,12 @@
         end subroutine set_default
 
         subroutine parse_arguments()
+
             implicit none
+                
+                character(len=100) :: arg
+                integer :: narg
+
             ! Parse command line arguments
                 narg = command_argument_count()
                 call get_command_argument(1, arg)
@@ -174,15 +178,14 @@
                             !    & "<input_traj> <wrapped_traj> <surface_file> &
                             !    & <stride> <box: lx ly lz> <op ref values: 1 2> <xi>"
                             arguments: do w=2,narg
-                                arg = ''
                                 call get_command_argument(w, arg)
                                 select case (w)
                                 case (2)
-                                    dname = trim(adjustl(arg))
+                                    dname = arg
                                 case (3)
-                                    file_water = trim(adjustl(arg))
+                                    file_water = arg
                                 case (4)
-                                    file_surface = trim(adjustl(arg))
+                                    file_surface = arg
                                 case (5)
                                     !arg = trim(adjustl(arg))
                                     read(arg,'(i)') stride

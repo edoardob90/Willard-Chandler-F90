@@ -30,7 +30,7 @@ module mod_surf
     real(DP), dimension(3,3) :: unit_cell, unit_cell_inv
 
 ! Input and output:
-    character(len=32) :: dname,file_water,file_surface,file_dist
+    character(len=100) :: dname,file_water,file_surface,file_dist
     integer :: dat,f_wat,f_sur,f_dist,stride
     character(len=100) :: input,input1
     real(DP) :: opref(2) ! the two reference values for the order parameter
