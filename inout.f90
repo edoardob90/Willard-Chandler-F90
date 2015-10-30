@@ -23,10 +23,9 @@
 ! Read in number of atoms and use it to calculate number of frames:
      read(dat,*) num_atom
      num_frames = num_frames / (num_atom + 2)
-     !read(dat,'(A)') input
-     !input1 = input
-     !input = adjustl(input(2:len(input)))
+     read(dat,*) ! Throw away the second line of frame 1 containing box size (the code already knows it from input)
 
+     return
     end subroutine
 ! -----------------------------------------------------------------------------------------------------------------------------
     subroutine startio_frame(frame)
