@@ -21,11 +21,6 @@
 
     call parse_arguments()
 
-    !!! TEST COMMAND LINE PARSER !!!
-    write(*,*) dname, file_water, file_surface, stride, box_length(:), opref(:), xi
-    stop
-
-     
      
 ! Open input and output files and begin the I/O:
      call start_io()

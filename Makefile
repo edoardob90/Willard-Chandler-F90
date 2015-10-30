@@ -1,9 +1,7 @@
 .PHONY: clean
 
 FC=ifort
-
 FFLAGS=-C -g -O0
-
 LIBS=
 
 # Suffix-rules:  Begin by throwing away all old suffix- 
