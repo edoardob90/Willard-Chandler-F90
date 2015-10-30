@@ -1,7 +1,7 @@
-.PHONY: clean
+.PHONY: clean link
 
 FC=ifort
-FFLAGS=-C -g -O0
+FFLAGS=-C -g -traceback -O0
 LIBS=
 
 # Suffix-rules:  Begin by throwing away all old suffix- 
@@ -22,6 +22,9 @@ include .depend
 # unwanted files 
 clean: 
 	rm -f *.o *.mod core
+
+link:
+	ln -fs ${PWD}/Surface.x ${HOME}/bin/
 
 
 # Create a dependency list using makedepf90.  All files  

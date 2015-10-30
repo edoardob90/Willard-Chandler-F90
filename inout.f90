@@ -12,7 +12,8 @@
 ! Find number of lines in file, store as num_frames:
      open(f_wat,file=file_water)
      open(f_sur,file=file_surface)
-     open(f_dist,file=file_dist)
+! No more needed     
+     !open(f_dist,file=file_dist)
      open(dat,file=dname,status='old')
      num_frames = 0
 25   read(dat,'(a)',err=50,end=50)
@@ -50,8 +51,8 @@
       write(f_sur,*) 2 * coord(1) * coord(2) + 2 * (coord(1)-1) * (coord(2)-1)
       write(f_sur,10) box_length(:)
       
-      write(f_dist,*) num_atom
-      write(f_dist,10) box_length(:)
+      !write(f_dist,*) num_atom
+      !write(f_dist,10) box_length(:)
 
 ! Read-in frame from input file:
 
@@ -62,7 +63,7 @@
 
       atom_loop: do x=1,num_atom
 ! Read from trajectory
-        read(dat,*) atoms(x)%symbol, atoms(x)%xyz(:), atoms(x)%op_value
+        read(dat,'(a,4f10.5)') atoms(x)%symbol, atoms(x)%xyz(:), atoms(x)%op_value
 
 ! Apply periodic boundary conditions:
         xscratch = atoms(x)%xyz(1)
