@@ -6,7 +6,8 @@
     implicit none
 ! This program calculates the Chandler surface for liquid water from an inputted XYZ file.
 
-     integer :: w,frame
+     integer :: w, frame, narg
+     character(len=10) :: arg
 
 ! For now, unit cell is orthorhombic, so that the matrix is unity:
 
@@ -16,28 +17,14 @@
      unit_cell(3,3) = 1.d0
      unit_cell_inv = unit_cell
 
-! Parse command line arguments
-    do i = 1, command_argument_count()
-       call get_command_argument(i, arg)
+! Parse command line for input
 
-       select case (arg)
-       case ('-v', '--version')
-          print '(2a)', 'cmdline version ', version
-          stop
-       case ('-h', '--help')
-          call print_help()
-          stop
-       case ('-t', '--time')
-          do_time = .true.
-       case default
-          print '(a,a,/)', 'Unrecognized command-line option: ', arg
-          call print_help()
-          stop
-       end select
-    end do
+    call parse_arguments()
 
-     
-     read(5,*) dname, file_water, file_surface, stride, box_length(:), opref(:), xi
+    !!! TEST COMMAND LINE PARSER !!!
+    write(*,*) dname, file_water, file_surface, stride, box_length(:), opref(:), xi
+    stop
+
      
      
 ! Open input and output files and begin the I/O:
@@ -119,15 +106,112 @@
     contains
 
         subroutine print_help()
-          print '(a)', 'usage: cmdline [OPTIONS]'
+          print '(a)', 'Usage: Surface.x [OPTIONS]'
           print '(a)', ''
-          print '(a)', 'Without further options, cmdline prints the date and exits.'
+          print '(a)', 'Surface.x modes:'
           print '(a)', ''
-          print '(a)', 'cmdline options:'
+          print '(a)', '  -i, --interactive        Ask for input interactively'
           print '(a)', ''
-          print '(a)', '  -v, --version     print version information and exit'
-          print '(a)', '  -h, --help        print usage information and exit'
-          print '(a)', '  -t, --time        print time'
+          print '(a)', '  -b, --batch        In-line input. The order MUST be the following:'
+          print '(a)', '    <input_traj> <wrapped_traj> <surface_file> &
+                               & <stride> <box: lx ly lz> <op ref values: 1 2> <xi>'
+
+          return
         end subroutine print_help
+
+        subroutine set_default(filename, def_filename)
+            implicit none
+            character(len=*) :: filename, def_filename
+
+            if (filename == ' ') filename=def_filename
+
+            return
+
+        end subroutine set_default
+
+        subroutine parse_arguments()
+            implicit none
+            ! Parse command line arguments
+                narg = command_argument_count()
+                call get_command_argument(1, arg)
+                arg = trim(adjustl(arg))
+            
+                ! No arguments is not good
+                if (narg == 0) then
+                    print *, "No arguments supplied. Are you kidding?!"
+                    call print_help()
+                    stop
+                end if
+            
+                ! Interactive mode if '-i' is passed as only option
+                if (narg == 1 .and. (arg =='-i' .or. arg == '--interactive')) then
+                    write(*,'(a,/)') "Surface.x is in interactive mode ..."
+                    write(*,'(3x,a)', advance='no') "Trajectory file [traj.xyz] >> "
+                    read(*,'(a)') dname
+                        call set_default(dname, 'traj.xyz')
+                    write(*,'(3x,a)', advance='no') "Output files [wrap_traj.xyz | surface.out] >> "
+                    read(*,'(2a)') file_water, file_surface
+                        call set_default(file_water, 'wrap_traj.xyz')
+                        call set_default(file_surface, 'surface.out')
+                    write(*,'(3x,a)', advance='no') "Stride [0 for default] >> "
+                    read(*,*) stride
+                        if (stride == 0) stride = 1
+                    write(*,'(3x,a)', advance='no') "Box size (lx ly lz) >> "
+                    read(*,*) box_length(:)
+                    write(*,'(3x,a)', advance='no') "Order parameter reference values (op1 op2) >> "
+                    read(*,*) opref(:)
+                    write(*,'(3x,a)', advance='no') "Gaussian variance [xi] >> "
+                    read(*,*) xi
+                else if (narg == 1 .and. (arg == '-b' .or. arg == '--batch')) then
+                    print *, "Surface.x is in batch mode... but no arguments supplied!"
+                    call print_help()
+                    stop
+                else if (narg > 1) then
+                    if (narg < 11) then
+                        print *, "Surface.x is in batch mode... but more input is needed!"
+                        call print_help()
+                        stop
+                    else
+                        call get_command_argument(1,arg)
+                        batch: if (arg == '-b' .or. arg == '--batch') then
+                            ! Batch mode
+                            !write(6,'(a,/,a)') "Batch mode: order must be supplied in THIS exact order", &
+                            !    & "<input_traj> <wrapped_traj> <surface_file> &
+                            !    & <stride> <box: lx ly lz> <op ref values: 1 2> <xi>"
+                            arguments: do w=2,narg
+                                arg = ''
+                                call get_command_argument(w, arg)
+                                select case (w)
+                                case (2)
+                                    dname = trim(adjustl(arg))
+                                case (3)
+                                    file_water = trim(adjustl(arg))
+                                case (4)
+                                    file_surface = trim(adjustl(arg))
+                                case (5)
+                                    !arg = trim(adjustl(arg))
+                                    read(arg,'(i)') stride
+                                case (6,7,8) ! box size
+                                    !arg = trim(adjustl(arg))
+                                    read(arg,*) box_length(w-5)
+                                case (9,10) ! op ref values
+                                    !arg = trim(adjustl(arg))
+                                    read(arg,*) opref(w-8)
+                                case (11)
+                                    !arg = trim(adjustl(arg))
+                                    read(arg,*) xi
+                                end select
+                            end do arguments
+                        else
+                            write(*,*) "Problem in parsing arguments. Did you supplied them correctly?"
+                            call print_help()
+                            stop
+                        end if batch
+                    end if
+                end if
+
+
+            return
+        end subroutine parse_arguments
     
 end program surface
