@@ -10,7 +10,7 @@
 
     integer u,v,w,x,y
     logical allfound,found(coord(1),coord(2),2)
-    real(8) lowbound,upbound
+    real(DP) lowbound,upbound
     integer xmin,xmax,ymin,ymax
 
 ! Firstly, take the centre of the box (box_length(1)/2,box_length(2)/2,0), and use Brent's algorithm
@@ -100,10 +100,10 @@
     implicit none
 
     integer x,y,N
-    real(8) surf_points(4)
-    real(8) xypoint(2),find_grad(3)
-    real(8) dfdx(4),dfdy(4),d2fdxdy(4),anszy,anszx
-    real(8) surf2point
+    real(DP) surf_points(4)
+    real(DP) xypoint(2),find_grad(3)
+    real(DP) dfdx(4),dfdy(4),d2fdxdy(4),anszy,anszx
+    real(DP) surf2point
 
 ! This subroutine finds the z-value of the surface between 4 (x,y) grid points.
 ! With all of the relevant data known at the four surrounding grid points, the value of z at which the surface occurs
@@ -137,7 +137,7 @@
     use mod_surf
     implicit none
 
-    real(8) :: grid_spacing
+    real(DP) :: grid_spacing
     integer :: i
 
 ! Calculate grid
@@ -160,7 +160,7 @@
 
 ! Find the gradient and the mixed terms, for interpolation:
     integer v,x,y
-    real(8) dens_field
+    real(DP) dens_field
 
       do x=1,coord(1)
        do y=1,coord(2)
@@ -180,9 +180,9 @@
     implicit none
 ! Interpolate between grid points, so that the surface can be drawn with triangles as a smooth function.
 
-    real(8) xypoint(2)
+    real(DP) xypoint(2)
     integer x,y
-    real(8) grad_int(3)
+    real(DP) grad_int(3)
 
 ! Draw the surface at the grid points:
      do x=1,coord(1)
@@ -225,7 +225,7 @@
 !!!    implicit none
 !!!
 !!!    integer w,gridx,gridy
-!!!    real(8) xyzpoint(2),grad_interp1(3),grad_interp2(3)
+!!!    real(DP) xyzpoint(2),grad_interp1(3),grad_interp2(3)
 !!!
 !!!! What is the atom's height compared to the two surfaces? Folding the atom back into the box allows
 !!!! this comparison to be carried out:

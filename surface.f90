@@ -44,7 +44,7 @@
 
      allocate( atoms(num_atom) )
      
-     allocate( zheight(num_atom,2) )
+     !allocate( zheight(num_atom,2) )
 
      allocate( gradient(coord(1),coord(2),2,3) )
      allocate( mixed(coord(1),coord(2),2) )
@@ -100,7 +100,7 @@
     close(f_wat)
     close(f_sur)
     
-    deallocate( atoms,surf,surf2,zheight,gradient,mixed )
+    deallocate( atoms,surf,surf2,gradient,mixed )
 
     contains
 
