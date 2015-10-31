@@ -2,38 +2,46 @@
 ! ...................................... SUBROUTINES ..........................................................
 ! .............................................................................................................
     subroutine start_io()
-    use mod_surf
-    implicit none
+		use mod_surf
+		
+		implicit none
+		
+		integer :: ios
 
-     dat = 7
-     f_wat = 8
-     f_sur = 9
-     f_dist = 10
-! Find number of lines in file, store as num_frames:
-     open(f_wat,file=file_water)
-     open(f_sur,file=file_surface)
-! No more needed     
-     !open(f_dist,file=file_dist)
-     open(dat,file=dname,status='old')
-     num_frames = 0
-25   read(dat,'(a)',err=50,end=50)
-     num_frames = num_frames + 1
-     goto 25
-50   rewind(dat)
+		dat = 7
+		f_wat = 8
+		f_sur = 9
+		f_dist = 10
+	! Find number of lines in file, store as num_frames:
+		open(f_wat, file=trim(adjustl(file_water)), status='unknown', action='readwrite')
+		open(f_sur, file=trim(adjustl(file_surface)), status='unknown', action='readwrite')     
+		!open(f_dist,file=file_dist)
+		open(dat, file=trim(adjustl(dname)), status='old', action='read')
+		
+		num_frames = 0
+		do
+			read(dat,*, iostat=ios)
+			if (ios /= 0) exit
+			num_frames = num_frames + 1
+		end do
+		rewind(dat)
 
-! Read in number of atoms and use it to calculate number of frames:
-     read(dat,*) num_atom
-     num_frames = num_frames / (num_atom + 2)
-     read(dat,*) ! Throw away the second line of frame 1 containing box size (the code already knows it from input)
+	! Read in number of atoms and use it to calculate number of frames:
+		read(dat,*) num_atom
+		num_frames = num_frames / (num_atom + 2)
+		read(dat,*) ! Throw away the second line of frame 1 containing box size (the code already knows it from input)
 
-     return
-    end subroutine
+		return
+		
+    end subroutine start_io
 ! -----------------------------------------------------------------------------------------------------------------------------
     subroutine startio_frame(frame)
+    
     use mod_surf
+    
     implicit none
 
-    integer :: frame,x
+    integer :: frame, x, i
     !real(8) :: com(3),mass(3)
 
 ! Write to standard output at the beginning of the frame:
@@ -42,7 +50,7 @@
 
 ! Write frame headers to output files:
 
-10 format(3f8.5)
+10 format(3f10.5)
 11 format(a3,x,e12.5,x,e12.5,x,e12.5)
       
       write(f_wat,*) num_atom
@@ -57,13 +65,30 @@
 ! Read-in frame from input file:
 
       if (frame .gt. 1) then
-       read(dat,'(A)')
-       read(dat,'(A)')
+       read(dat,*)
+       read(dat,*)
       endif
 
       atom_loop: do x=1,num_atom
 ! Read from trajectory
-        read(dat,'(a,4f10.5)') atoms(x)%symbol, atoms(x)%xyz(:), atoms(x)%op_value
+	! If the interface is perpendicular to Z, nothing to be done
+	! Otherwise, we must swap the correct coordinate to get a correct interface orientation
+		if ( normal_along_z ) then
+			read(dat,*) atoms(x)%symbol, atoms(x)%xyz(:), atoms(x)%op_value
+		
+		else
+			
+			if ( normal_is == 'x' ) then
+				! Swap X and Z
+				read(dat,*) atoms(x)%symbol, (atoms(x)%xyz(i), i=3,1,-1), atoms(x)%op_value
+			
+			else if ( normal_is == 'y') then
+				! Swap Y and Z
+				read(dat,*) atoms(x)%symbol, atoms(x)%xyz(1), atoms(x)%xyz(3), atoms(x)%xyz(2), atoms(x)%op_value
+			
+			end if
+			
+		end if
 
 ! Apply periodic boundary conditions:
         xscratch = atoms(x)%xyz(1)
@@ -83,6 +108,8 @@
       return
 
     end subroutine
+
+    
 ! -----------------------------------------------------------------------------------------------------------------------------
 !!!    subroutine list_molecules()
 !!!    use mod_surf

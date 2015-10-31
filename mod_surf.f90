@@ -30,10 +30,11 @@ module mod_surf
     real(DP), dimension(3,3) :: unit_cell, unit_cell_inv
 
 ! Input and output:
-    character(len=100) :: dname,file_water,file_surface,file_dist
-    integer :: dat,f_wat,f_sur,f_dist,stride
-    character(len=100) :: input,input1
+    character(len=100) :: dname, file_water, file_surface, file_dist, input, input1
+    integer :: dat, f_wat, f_sur, f_dist, stride
     real(DP) :: opref(2) ! the two reference values for the order parameter
+    logical :: normal_along_z
+    character(len=1) :: normal_is
 
 ! NEW: the Atom type
     type Atom
@@ -90,7 +91,7 @@ module mod_surf
 
     real(DP) :: x,y,z
 
-    density_field_const = cal_density_field(x,y,z) - const
+    density_field_const = cal_op_field(x,y,z) - const
 
     return
 

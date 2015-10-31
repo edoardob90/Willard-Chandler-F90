@@ -28,9 +28,13 @@
       x = nint(box_length(1)/2)
       y = nint(box_length(2)/2)
       
-      surf(x,y,1,3) = brent(0.d0,box_length(3)*0.5d0,1.d-6,surf(x,y,1,1),surf(x,y,1,2),density_field_const)
-      surf(x,y,2,3) = brent(box_length(3)*0.5d0,box_length(3),1.d-9,surf(x,y,2,1),surf(x,y,2,2),density_field_const)
+      !print *, "Line 31, calculations.f90"
+      
+      surf(x,y,1,3) = brent( 0.d0, box_length(3)*0.5d0, 1.d-6, surf(x,y,1,1), surf(x,y,1,2), density_field_const )
+      surf(x,y,2,3) = brent(box_length(3)*0.5d0, box_length(3), 1.d-9, surf(x,y,2,1), surf(x,y,2,2), density_field_const)
       found(x,y,:) = .true.
+      
+      !print *, "Line 37, calculations.f90"
 
 ! Then, spreading out from this point, find the surface at different (X,Y) values.
 

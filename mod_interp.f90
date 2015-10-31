@@ -1,5 +1,11 @@
     module mod_interp
+    
+    use kinds, only: DP
+    
     implicit none
+    
+    save
+    
 ! This module defines standalone functions and subroutines useful for interpolation of functions, 
 ! both in one and two dimensions.
 
@@ -123,13 +129,13 @@
 
     end subroutine
 ! ------------------------------------------------------------------------------------------------------------------------
-    real(8) function brent(z1,z2,tol,x,y,fxyz)
+    real(DP) function brent(z1,z2,tol,x,y,fxyz)
     implicit none
 
-    real(8) z1,z2,tol,x,y,fxyz
-    integer i,maxit
-    real(8) za,zb,zc,zd,ze,funca,funcb,funcc,tol1,xm,p,q,r,s
-    parameter(maxit = 100)
+    real(DP) :: z1,z2,tol,x,y,fxyz
+    integer :: i
+    real(DP) :: za,zb,zc,zd,ze,funca,funcb,funcc,tol1,xm,p,q,r,s
+    integer, parameter :: maxit=100
 
     za = z1
     zb = z2
