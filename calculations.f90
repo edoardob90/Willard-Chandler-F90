@@ -145,7 +145,6 @@
      !read(input,*) (box_length(x),x=1,3,1)
 
      coord = 0
-!     grid_spacing = 1.0d0
      grid_spacing = 0.5d0
      do i=1,3
       coord(i) = 1 + nint(box_length(i) / grid_spacing)
@@ -180,20 +179,21 @@
     implicit none
 ! Interpolate between grid points, so that the surface can be drawn with triangles as a smooth function.
 
-    real(DP) xypoint(2)
-    integer x,y
-    real(DP) grad_int(3)
+    real(DP) :: xypoint(2), grad_int(3)
+    integer :: x,y,j
 
 ! Draw the surface at the grid points:
+10 format('Cl',3x,f20.10,3x,f20.10,3x,f20.10)
+
      do x=1,coord(1)
       do y=1,coord(2)
         if (.not. ((surf(x,y,1,1) .eq. 0.d0) .and. (surf(x,y,1,2) .eq. 0.d0) &
      &      .and. (surf(x,y,1,3) .eq. 0.d0))) then
-              write(f_sur,*) 'Cl	',surf(x,y,1,1),'	',surf(x,y,1,2),'	',surf(x,y,1,3)
+              write(f_sur,10) ( surf(x,y,1,j), j=1,3 )
         endif
         if (.not. ((surf(x,y,2,1) .eq. 0.d0) .and. (surf(x,y,2,2) .eq. 0.d0) &
      &      .and. (surf(x,y,2,3) .eq. 0.d0))) then
-              write(f_sur,*) 'Cl	',surf(x,y,2,1),'	',surf(x,y,2,2),'	',surf(x,y,2,3) - box_length(3)
+              write(f_sur,10) (surf(x,y,2,j), j=1,2), surf(x,y,2,3) - box_length(3)
         endif
       enddo
      enddo
@@ -212,8 +212,8 @@
         surf2(x,y,2,2) = (y-1)*gspacing(2) + 0.5d0*gspacing(2)
         call int_surface(2,x,y,surf2(x,y,2,3),xypoint,grad_int)
 
-        write(f_sur,*) 'Cl	',surf2(x,y,1,1),'	',surf2(x,y,1,2),'	',surf2(x,y,1,3)
-        write(f_sur,*) 'Cl	',surf2(x,y,2,1),'	',surf2(x,y,2,2),'	',surf2(x,y,2,3) - box_length(3)
+        write(f_sur,10) ( surf2(x,y,1,j), j=1,3 )
+        write(f_sur,10) ( surf2(x,y,2,j), j=1,2 ), surf2(x,y,2,3) - box_length(3)
 
       enddo
      enddo

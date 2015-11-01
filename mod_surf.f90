@@ -8,9 +8,8 @@ module mod_surf
 ! Define global variables
 ! =========================
 ! Constants and input parameters:
-    real(DP) :: xi,ximin2,ximin4,ninxisq,phi3xi,const,prefac
+    real(DP) :: xi,ximin2,ximin4,ninxisq,phi3xi,const,prefac,xscratch,yscratch,zscratch
     real(DP), dimension(3) :: box_length, gspacing
-    real(DP) :: xscratch,yscratch,zscratch
     integer :: coord(3)
 
 ! Surface variables:
