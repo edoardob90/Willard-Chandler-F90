@@ -1,7 +1,7 @@
 .PHONY: clean link
 
 FC=gfortran
-FFLAGS=-Og -fbacktrace
+FFLAGS=-O2 -Wall #-Og -fbacktrace
 LIBS=
 
 # Suffix-rules:  Begin by throwing away all old suffix- 

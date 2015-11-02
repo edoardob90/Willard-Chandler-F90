@@ -2,38 +2,58 @@
 ! ...................................... SUBROUTINES ..........................................................
 ! .............................................................................................................
     subroutine start_io()
-		use mod_surf
-		
-		implicit none
-		
-		integer :: ios
+        use mod_surf
+        
+        implicit none
+        
+        integer :: ios
 
-		dat = 7
-		f_wat = 8
-		f_sur = 9
-		f_dist = 10
-	! Find number of lines in file, store as num_frames:
-		open(f_wat, file=trim(adjustl(file_water)), status='unknown', action='readwrite')
-		open(f_sur, file=trim(adjustl(file_surface)), status='unknown', action='readwrite')     
-		!open(f_dist,file=file_dist)
-		open(dat, file=trim(adjustl(dname)), status='old', action='read')
-		
-		num_frames = 0
-		do
-			read(dat,*, iostat=ios)
-			if (ios /= 0) exit
-			num_frames = num_frames + 1
-		end do
-		rewind(dat)
+        dat = 7
+        f_wat = 8
+        f_sur = 9
+        f_dist = 10
+    ! Find number of lines in file, store as num_frames:
+        open(f_wat, file=trim(adjustl(file_water)), status='unknown', action='readwrite')
+        open(f_sur, file=trim(adjustl(file_surface)), status='unknown', action='readwrite')     
+        !open(f_dist,file=file_dist)
+        open(dat, file=trim(adjustl(dname)), status='old', action='read')
+        
+        num_frames = 0
+        do
+            read(dat,*, iostat=ios)
+            if (ios /= 0) exit
+            num_frames = num_frames + 1
+        end do
+        
+        rewind(dat)
 
-	! Read in number of atoms and use it to calculate number of frames:
-		read(dat,*) num_atom
-		num_frames = num_frames / (num_atom + 2)
-		read(dat,*) ! Throw away the second line of frame 1 containing box size (the code already knows it from input)
+    ! Read in number of atoms and use it to calculate number of frames:
+        read(dat,*) num_atom
+        num_frames = num_frames / (num_atom + 2)
+        read(dat,*) ! Throw away the second line of frame 1 containing box size (the code already knows it from input)
 
-		return
-		
+        return
+        
     end subroutine start_io
+! -----------------------------------------------------------------------------------------------------------------------------
+    subroutine skip_frame()
+
+        implicit none
+
+        integer :: i
+
+        ! Skip header lines (first 2)
+        read(dat,*)
+        read(dat,*)
+        
+        ! Skip coordinates
+        do i=1,num_atom
+           read(dat,*)
+        end do
+
+        return
+
+    end subroutine skip_frame
 ! -----------------------------------------------------------------------------------------------------------------------------
     subroutine startio_frame(frame)
     
@@ -71,24 +91,24 @@
 
       atom_loop: do x=1,num_atom
 ! Read from trajectory
-	! If the interface is perpendicular to Z, nothing to be done
-	! Otherwise, we must swap the correct coordinate to get a correct interface orientation
-		if ( normal_along_z ) then
-			read(dat,*) atoms(x)%symbol, atoms(x)%xyz(:), atoms(x)%op_value
-		
-		else
-			
-			if ( normal_is == 'x' ) then
-				! Swap X and Z
-				read(dat,*) atoms(x)%symbol, (atoms(x)%xyz(i), i=3,1,-1), atoms(x)%op_value
-			
-			else if ( normal_is == 'y') then
-				! Swap Y and Z
-				read(dat,*) atoms(x)%symbol, atoms(x)%xyz(1), atoms(x)%xyz(3), atoms(x)%xyz(2), atoms(x)%op_value
-			
-			end if
-			
-		end if
+    ! If the interface is perpendicular to Z, nothing to be done
+    ! Otherwise, we must swap the correct coordinate to get a correct interface orientation
+        if ( normal_along_z ) then
+            read(dat,*) atoms(x)%symbol, atoms(x)%xyz(:), atoms(x)%op_value
+        
+        else
+            
+            if ( normal_is == 'x' ) then
+                ! Swap X and Z
+                read(dat,*) atoms(x)%symbol, (atoms(x)%xyz(i), i=3,1,-1), atoms(x)%op_value
+            
+            else if ( normal_is == 'y') then
+                ! Swap Y and Z
+                read(dat,*) atoms(x)%symbol, atoms(x)%xyz(1), atoms(x)%xyz(3), atoms(x)%xyz(2), atoms(x)%op_value
+            
+            end if
+            
+        end if
 
 ! Apply periodic boundary conditions:
         xscratch = atoms(x)%xyz(1)
