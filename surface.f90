@@ -57,7 +57,7 @@
      frame_loop: do frame=1,num_frames
      
          ! Check if we need to process every frame or not
-         skip_frame: if ( mod(frame,stride) /= 0) then
+         frame_skip: if ( mod(frame,stride) /= 0) then
              
              call skip_frame()
          
@@ -97,7 +97,7 @@
              !!!       call write_distances(mod(w,3),w,min(zheight(w,1),zheight(w,2)))
              !!!
              !!!      enddo
-         end if skip_frame
+         end if frame_skip
 
      end do frame_loop
 
