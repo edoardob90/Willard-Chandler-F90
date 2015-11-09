@@ -59,45 +59,46 @@
          ! Check if we need to process every frame or not
          frame_skip: if ( mod(frame,stride) /= 0) then
              
-             call skip_frame()
+                          call skip_frame(frame)
+                          cycle frame_loop
          
-         else
-             ! Write to standard output, write the frame header to the output files, read-in frame
-             ! from XYZ file, and list the number of HOH, DOD and HOD molecules:
-             
-                   call startio_frame(frame)
-                   
-             
-             ! Find the constant, const, and find the surface in terms of (x,y) grid points:
-             
-             ! const should be: opref(liquid)+opref(solid)/2
-                   const = SUM(opref)/2
-                   
-                   call find_surface()
-             
-             ! Find the gradient and the mixed terms, and interpolate between grid points to draw the
-             ! surface as a smooth function, in terms of triangles:
-             
-                   call find_terms_int()
-                   
-                   call triangles()
-             
-             !!!! Now that processing has been carried out on this frame, the height of an atom compared to each surface is found, and the number
-             !!!! of H and D atoms above the surface are counted.
-             !!!
-             !!!      do w=1,num_atom
-             !!!
-             !!!! Find the height of this atom below both the upper and lower surface and the unit vector normal
-             !!!! to the corresponding point on the surface:
-             !!!
-             !!!       call find_atom_height_grad(w)
-             !!!
-             !!!! Calculate the three vectors vec1, vec2 and vec3, and print out the atom's height above the surface:
-             !!!
-             !!!       call write_distances(mod(w,3),w,min(zheight(w,1),zheight(w,2)))
-             !!!
-             !!!      enddo
-         end if frame_skip
+                     else
+                         ! Write to standard output, write the frame header to the output files, read-in frame
+                         ! from XYZ file, and list the number of HOH, DOD and HOD molecules:
+                         
+                               call startio_frame(frame)
+                               
+                         
+                         ! Find the constant, const, and find the surface in terms of (x,y) grid points:
+                         
+                         ! const should be: opref(liquid)+opref(solid)/2
+                               const = SUM(opref)/2
+                               
+                               call find_surface()
+                         
+                         ! Find the gradient and the mixed terms, and interpolate between grid points to draw the
+                         ! surface as a smooth function, in terms of triangles:
+                         
+                               call find_terms_int()
+                               
+                               call triangles()
+                         
+                         !!!! Now that processing has been carried out on this frame, the height of an atom compared to each surface is found, and the number
+                         !!!! of H and D atoms above the surface are counted.
+                         !!!
+                         !!!      do w=1,num_atom
+                         !!!
+                         !!!! Find the height of this atom below both the upper and lower surface and the unit vector normal
+                         !!!! to the corresponding point on the surface:
+                         !!!
+                         !!!       call find_atom_height_grad(w)
+                         !!!
+                         !!!! Calculate the three vectors vec1, vec2 and vec3, and print out the atom's height above the surface:
+                         !!!
+                         !!!       call write_distances(mod(w,3),w,min(zheight(w,1),zheight(w,2)))
+                         !!!
+                         !!!      enddo
+                     end if frame_skip
 
      end do frame_loop
 
@@ -113,14 +114,14 @@
 
         subroutine print_help()
           
-          print '(a)', 'Usage: Surface.x [-b] [-i] <ARGUMENTS>'
-          print '(a)', ''
-          print '(a)', 'Surface.x modes:'
-          print '(a)', ''
-          print '(a)', '  -i, --interactive        Ask for input interactively'
-          print '(a)', ''
-          print '(a)', '  -b, --batch        Read from standard input. The order MUST be the following:'
-          print '(a)', '    <input_traj> <interface normal (x,y,z)> <wrapped_traj> <surface_file> &
+          write(6,'(a)') 'Usage: Surface.x [-b] [-i] <ARGUMENTS>'
+          write(6,'(a)') ''
+          write(6,'(a)') 'Surface.x modes:'
+          write(6,'(a)') ''
+          write(6,'(a)') '  -i, --interactive        Ask for input interactively'
+          write(6,'(a)') ''
+          write(6,'(a)') '  -b, --batch        Read from standard input. The order MUST be the following:'
+          write(6,'(a)') '    <input_traj> <interface normal (x,y,z)> <wrapped_traj> <surface_file> &
                                & <stride> <box: lx ly lz> <op ref values: 1 2> <Gaussian xi>'
 
           return
@@ -143,7 +144,8 @@
             implicit none
                 
                 character(len=100) :: arg
-                integer :: narg
+                character(len=3) :: ext
+                integer :: narg, llen
                 real(DP) :: temp
 
             ! Parse command line arguments
@@ -198,17 +200,29 @@
                 ! If '-b' is passed, batch mode: read from standard input
                 else if (narg == 1 .and. (arg == '-b' .or. arg == '--batch')) then
                 
-                    print *, "Surface.x is in batch mode... reading from standard input"
+                    write(6,'(a,/)') "Surface.x is in batch mode... reading from standard input"
+                    
                     read(5,*) dname, normal_is, file_water, file_surface, stride, box_length(:), opref(:), xi
-                    if (normal_is == 'T' .or. normal_is == '') then
+                    write(6,'(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i3,a,/,3x,a,3f10.5,/,3x,a,2f10.5,/,3x,a,f5.3,a,/)') & 
+                        & "Willard-Chandler surface will be computed according to the following input:", &
+                        & "Input trajectory: ", to_upper(trim(dname)), &
+                        & "Interface normal along ", to_upper(normal_is), " axis", &
+                        & "Output files: ", to_upper(trim(file_water)), " and ", to_upper(trim(file_surface)), &
+                        & "Processing every ", stride, " frames", &
+                        & "Simulation box size: ", box_length(:), &
+                        & "Order parameter references: ", opref(:), &
+                        & "Variance of the Gaussian functions: ", xi, " (in appropriate length units)"
+
+                    if (normal_is == 'z' .or. normal_is == '') then
                             normal_along_z = .true.
                             normal_is = 'z'
                     else
                             normal_along_z = .false.
                     end if
+
                 
                 else
-                    print *, "Wrong number of arguments or option not recognized. Stop."
+                    write(6,*) "Wrong number of arguments or option not recognized. Stop."
                     call print_help()
                     stop
                                         
@@ -218,13 +232,9 @@
                     if (.not. normal_along_z) then
                         !print *, "Enter in the swap check"
                         if (normal_is == 'x') then
-                            temp = box_length(1)
-                            box_length(1) = box_length(3)
-                            box_length(3) = temp
+                            call swap_coord(box_length, 1, 3)
                         else if (normal_is == 'y') then
-                            temp = box_length(2)
-                            box_length(2) = box_length(3)
-                            box_length(3) = temp
+                            call swap_coord(box_length, 2, 3)
                         end if
                     end if
 
@@ -232,6 +242,26 @@
             return
             
         end subroutine parse_arguments
+
+
+        function to_upper(strIn) result(strOut)
+        
+             implicit none
+        
+             character(len=*), intent(in) :: strIn
+             character(len=len(strIn)) :: strOut
+             integer :: i,j
+        
+             do i = 1, len(strIn)
+                  j = iachar(strIn(i:i))
+                  if (j>= iachar("a") .and. j<=iachar("z") ) then
+                       strOut(i:i) = achar(iachar(strIn(i:i))-32)
+                  else
+                       strOut(i:i) = strIn(i:i)
+                  end if
+             end do
+        
+        end function to_upper
 
     
 end program surface

@@ -1,21 +1,16 @@
-.PHONY: clean link
+.PHONY: clean link rm-link
 
-FC=gfortran
-FFLAGS=-O2 -Wall #-Og -fbacktrace
+FC=ifort
+FFLAGS=-fast
+#FFLAGS=-O0 -g -traceback -fpe0
 LIBS=
-
-# Suffix-rules:  Begin by throwing away all old suffix- 
-# rules, and then create new ones for compiling  
-# *.f90-files. 
-.SUFFIXES: 
-.SUFFIXES: .f90 .o
-
-
-.f90.o: 
-	$(FC) -c $(FFLAGS) $<
 
 # Include the dependency-list created by makedepf90 below 
 include .depend
+
+
+%.o: %.f90 
+	$(FC) -c $(FFLAGS) -o $@ $<
 
 
 # target 'clean' for deleting object- *.mod- and other  
@@ -26,6 +21,9 @@ clean:
 link:
 	ln -fs ${PWD}/Surface.x ${HOME}/bin/
 
+rm-link:
+	rm -f ${HOME}/bin/Surface.x
+
 
 # Create a dependency list using makedepf90.  All files  
 # that needs to be compiled to build the program,  
@@ -35,5 +33,5 @@ link:
 # The argument to the '-o' option will be the name of the 
 # resulting program when running 'make', in this case  
 # 'foobar' 
-depend .depend: 
+.depend: 
 	makedepf90 -W -o Surface.x *.f90 > .depend

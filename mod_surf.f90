@@ -32,8 +32,9 @@ module mod_surf
     character(len=100) :: dname, file_water, file_surface, file_dist, input, input1
     integer :: dat, f_wat, f_sur, f_dist, stride
     real(DP) :: opref(2) ! the two reference values for the order parameter
-    logical :: normal_along_z
+    logical :: normal_along_z, pdb
     character(len=1) :: normal_is
+    character(len=*), parameter :: pdbformat="('ATOM',i7,1x,a2,6x,a2,i4,4x,3f8.3,2f6.2,10x,a2)"
 
 ! NEW: the Atom type
     type Atom
@@ -278,14 +279,14 @@ module mod_surf
 
     real(DP), intent(inout) :: r(3)
 
-    do while (dabs(r(1)) .gt. 0.5d0*box_length(1))
-     r(1) = r(1) - dsign(box_length(1),r(1))
+    do while ( abs(r(1)) > box_length(1)/2.d0 )
+     r(1) = r(1) - sign(box_length(1),r(1))
     enddo
-    do while (dabs(r(2)) .gt. 0.5d0*box_length(2))
-     r(2) = r(2) - dsign(box_length(2),r(2))
+    do while ( abs(r(2)) > box_length(2)/2.d0 )
+     r(2) = r(2) - sign(box_length(2),r(2))
     enddo
-    do while (dabs(r(3)) .gt. 0.5d0*box_length(3))
-     r(3) = r(3) - dsign(box_length(3),r(3))
+    do while ( abs(r(3)) > box_length(3)/2.d0 )
+     r(3) = r(3) - sign(box_length(3),r(3))
     enddo
 
     return

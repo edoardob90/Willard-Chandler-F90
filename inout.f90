@@ -36,13 +36,31 @@
         
     end subroutine start_io
 ! -----------------------------------------------------------------------------------------------------------------------------
-    subroutine skip_frame()
+    subroutine swap_coord(vector, i, j)
+        use mod_surf
+        implicit none
+
+        real(DP), dimension(3), intent(inout) :: vector
+        integer, intent(in) :: i,j
+        real(DP) :: temp
+
+        temp = vector(i)
+        vector(i) = vector(j)
+        vector(j) = temp
+
+        return
+    end subroutine swap_coord
+! -----------------------------------------------------------------------------------------------------------------------------
+    subroutine skip_frame(f)
 
         use mod_surf
 
         implicit none
 
-        integer :: i
+        integer :: i, f
+
+        !write(6,*) "Skipping frame ", f
+        !flush(6)
 
         ! Skip header lines (first 2)
         read(dat,*)
@@ -73,7 +91,7 @@
 ! Write frame headers to output files:
 
 10 format(3f10.5)
-11 format(a3,x,e12.5,x,e12.5,x,e12.5)
+11 format(a3,x,f12.5,x,f12.5,x,f12.5)
       
       write(f_wat,*) num_atom
       write(f_wat,10) box_length(:)
@@ -93,23 +111,20 @@
 
       atom_loop: do x=1,num_atom
 ! Read from trajectory
-    ! If the interface is perpendicular to Z, nothing to be done
-    ! Otherwise, we must swap the correct coordinate to get a correct interface orientation
-        if ( normal_along_z ) then
-            read(dat,*) atoms(x)%symbol, atoms(x)%xyz(:), atoms(x)%op_value
+    ! First: read current record
+        read(dat,*,iostat=i) atoms(x)%symbol, atoms(x)%xyz(:), atoms(x)%op_value
         
-        else
-            
+    ! If the interface is perpendicular to Z, nothing to be done
+    ! Otherwise, we must swap coordinates to get a correct interface orientation along Z
+        if ( .not. normal_along_z ) then
             if ( normal_is == 'x' ) then
                 ! Swap X and Z
-                read(dat,*) atoms(x)%symbol, (atoms(x)%xyz(i), i=3,1,-1), atoms(x)%op_value
+                call swap_coord(atoms(x)%xyz, 1, 3)
             
             else if ( normal_is == 'y') then
                 ! Swap Y and Z
-                read(dat,*) atoms(x)%symbol, atoms(x)%xyz(1), atoms(x)%xyz(3), atoms(x)%xyz(2), atoms(x)%op_value
-            
+                call swap_coord(atoms(x)%xyz, 2, 3)
             end if
-            
         end if
 
 ! Apply periodic boundary conditions:

@@ -193,12 +193,12 @@
         endif
         if (.not. ((surf(x,y,2,1) .eq. 0.d0) .and. (surf(x,y,2,2) .eq. 0.d0) &
      &      .and. (surf(x,y,2,3) .eq. 0.d0))) then
-              write(f_sur,10) (surf(x,y,2,j), j=1,2), surf(x,y,2,3) - box_length(3)
+              !write(f_sur,10) (surf(x,y,2,j), j=1,2), surf(x,y,2,3) - box_length(3)
         endif
       enddo
      enddo
 
-    write(*,*) gspacing
+    write(6,*) "Grid spacing in each direction: ", gspacing
 
 ! Find and draw the surface 'in-between' the grid points:
      xypoint(1) = 0.5d0 * gspacing(1)
@@ -213,7 +213,7 @@
         call int_surface(2,x,y,surf2(x,y,2,3),xypoint,grad_int)
 
         write(f_sur,10) ( surf2(x,y,1,j), j=1,3 )
-        write(f_sur,10) ( surf2(x,y,2,j), j=1,2 ), surf2(x,y,2,3) - box_length(3)
+        !write(f_sur,10) ( surf2(x,y,2,j), j=1,2 ), surf2(x,y,2,3) - box_length(3)
 
       enddo
      enddo
