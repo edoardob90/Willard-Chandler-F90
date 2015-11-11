@@ -3,7 +3,7 @@
 FC=ifort
 FFLAGS=-fast
 #FFLAGS=-O0 -g -traceback -fpe0
-LIBS=
+LIBS=-lfftw3 -lm
 
 # Include the dependency-list created by makedepf90 below 
 include .depend
@@ -16,7 +16,7 @@ include .depend
 # target 'clean' for deleting object- *.mod- and other  
 # unwanted files 
 clean: 
-	rm -f *.o *.mod core
+	rm -f *.o *.mod core .depend
 
 link:
 	ln -fs ${PWD}/Surface.x ${HOME}/bin/
