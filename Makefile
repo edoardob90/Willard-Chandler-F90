@@ -4,6 +4,7 @@ FC=ifort
 FFLAGS=-fast
 #FFLAGS=-O0 -g -traceback -fpe0
 LIBS=-lfftw3 -lm
+LDFLAGS=
 
 # Include the dependency-list created by makedepf90 below 
 include .depend
