@@ -1,6 +1,7 @@
 module mod_surf
     use kinds, only: DP
     use constants, only: pi
+    use fftw3
     implicit none
     save
 
@@ -44,6 +45,14 @@ module mod_surf
     end type Atom
 
     type(Atom), allocatable :: atoms(:)
+
+! Surface variables for Fourier Transform
+   logical :: compute_fft
+   character(len=3) :: fft_answer
+   real(C_DOUBLE), pointer :: h_xy(:,:) ! The surface matrix, a reshape of the surf(:,:,:,:) matrix
+   complex(C_DOUBLE_COMPLEX), pointer :: ck_xy(:,:) ! The matrix of Fourier coefficients
+   real(C_DOUBLE), pointer :: ck_xy_r(:,:) ! Square moduli of the coefficients
+   type(C_PTR) :: plan, datac, datar, datar2
 
 ! =============================
 ! Functions and subroutines
@@ -293,4 +302,33 @@ module mod_surf
 
     end subroutine
 ! ------------------------------------------------------------------------------------------------------------------------
-end module
+   subroutine setup_fft()
+
+       implicit none
+
+       integer :: L, M ! Dimension of the in out matrices, for simplicity
+
+       L = coord(1)
+       M = coord(2)
+
+       ! Define fft data to allocate in and out matrices
+       datar = fftw_alloc_real( int( L * M, C_SIZE_T ) )
+       datac = fftw_alloc_complex( int( (L/2+1) * M, C_SIZE_T ) )
+       datar2 = fftw_alloc_real( int( (L/2+1) * M, C_SIZE_T ) )
+       
+       ! Allocate in and out matrices
+       call c_f_pointer(datar, h_xy, [L,M]) ! surface
+       call c_f_pointer(datac, ck_xy, [(L/2+1),M])  ! coeffs
+       call c_f_pointer(datar2, ck_xy_r, [(L/2+1),M])  ! coeffs, square moduli
+
+       ! Initialize in and out matrices
+       h_xy = 0.0d0
+       ck_xy = (0.0d0,0.0d0)
+
+       ! Build plan
+       plan = fftw_plan_dft_r2c_2d(M, L, h_xy, ck_xy, FFTW_ESTIMATE)
+
+       return
+   end subroutine setup_fft
+
+end module mod_surf

@@ -6,7 +6,7 @@
     implicit none
 ! This program calculates the Chandler surface for liquid water from an inputted XYZ file.
 
-     integer :: w, frame
+     integer :: w, frame, i, j, ncol
 
 ! For now, unit cell is orthorhombic, so that the matrix is unity:
 
@@ -36,6 +36,7 @@
      call calculate_grid()
 
      write(*,*) box_length
+     write(*,*) coord(:)
 
 ! Initialize arrays:
 
@@ -51,6 +52,11 @@
 
      allocate( surf2(coord(1)-1,coord(2)-1,2,3) )
      allocate( surf(coord(1),coord(2),2,3) )
+    
+! Call the subroutine to setup the FFT
+
+     call setup_fft()
+
 
 ! Loop through each frame:
 
@@ -63,6 +69,8 @@
                           cycle frame_loop
          
                      else
+                         !!! PART ONE: find the Willard-Chandler surface !!!
+                         
                          ! Write to standard output, write the frame header to the output files, read-in frame
                          ! from XYZ file, and list the number of HOH, DOD and HOD molecules:
                          
@@ -82,22 +90,38 @@
                                call find_terms_int()
                                
                                call triangles()
+
+                               if (frame/stride == 1) write(6,'(a,3f10.5)') "Grid spacing in each direction: ", gspacing
                          
-                         !!!! Now that processing has been carried out on this frame, the height of an atom compared to each surface is found, and the number
-                         !!!! of H and D atoms above the surface are counted.
-                         !!!
-                         !!!      do w=1,num_atom
-                         !!!
-                         !!!! Find the height of this atom below both the upper and lower surface and the unit vector normal
-                         !!!! to the corresponding point on the surface:
-                         !!!
-                         !!!       call find_atom_height_grad(w)
-                         !!!
-                         !!!! Calculate the three vectors vec1, vec2 and vec3, and print out the atom's height above the surface:
-                         !!!
-                         !!!       call write_distances(mod(w,3),w,min(zheight(w,1),zheight(w,2)))
-                         !!!
-                         !!!      enddo
+                               
+                         !!! PART TWO: Fourier transform of the height profile of the interface !!!
+                            
+                         ! Reshape the matrix surface to be a 2-dimensional matrix
+                         ! Each element z=(i,j) is:
+                         !  i = point of the grid along X
+                         !  j = point of the grid along Y
+                         !  z = height of the surface at the corresponding grid point
+                         fft_compute: if (compute_fft) then
+                        
+                               do i=1,coord(1)
+                                  do j=1,coord(2)
+                                     h_xy(i,j) = surf(i,j,1,3)
+                                     write(6,'(a,i,a,i,a,f15.5)') "h(i,j) for i= ",i," and j= ",j," is ",surf(i,j,1,3)
+                                  end do
+                               end do
+                               
+                               write(6,*) "Computing Fourier transform at frame ", frame
+ 
+                               call fftw_execute_dft_r2c(plan, h_xy, ck_xy)
+
+                               ! Compute the square modulus of each Fourier coefficients
+                               ck_xy_r(:,:) = ck_xy(:,:)*CONJG( ck_xy(:,:) )
+                               ncol=coord(1)/2+1
+                               write(999,'(<ncol>f20.10)') ( ck_xy_r(i,:), i=1,coord(1)/2+1 )
+
+                        end if fft_compute
+                         
+                         
                      end if frame_skip
 
      end do frame_loop
@@ -109,6 +133,11 @@
     close(f_sur)
     
     deallocate( atoms,surf,surf2,gradient,mixed )
+    
+    call fftw_destroy_plan(plan)
+    call fftw_free(datar)
+    call fftw_free(datar2)
+    call fftw_free(datac)
 
     contains
 
@@ -122,7 +151,8 @@
           write(6,'(a)') ''
           write(6,'(a)') '  -b, --batch        Read from standard input. The order MUST be the following:'
           write(6,'(a)') '    <input_traj> <interface normal (x,y,z)> <wrapped_traj> <surface_file> &
-                               & <stride> <box: lx ly lz> <op ref values: 1 2> <Gaussian xi>'
+                               & <stride> <box: lx ly lz> <op ref values: 1 2> <Gaussian xi> &
+                               <Compute FT [yes/no]>'
 
           return
         end subroutine print_help
@@ -197,13 +227,23 @@
                     write(*,'(3x,a)', advance='no') "Gaussian variance [xi] >> "
                     read(*,*) xi
                 
+                    write(*,'(3x,a)', advance='no') "Compute FT of height profile? [Y/n] >> "
+                    read(*,'(a)') fft_answer
+                        if (fft_answer(1:1) == "y" .or. fft_answer(1:1) == "Y") then
+                            compute_fft = .true.
+                            fft_answer = "yes"
+                        else
+                            compute_fft = .false.
+                            fft_answer = "no"
+                        end if
+
                 ! If '-b' is passed, batch mode: read from standard input
                 else if (narg == 1 .and. (arg == '-b' .or. arg == '--batch')) then
                 
                     write(6,'(a,/)') "Surface.x is in batch mode... reading from standard input"
                     
-                    read(5,*) dname, normal_is, file_water, file_surface, stride, box_length(:), opref(:), xi
-                    write(6,'(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i3,a,/,3x,a,3f10.5,/,3x,a,2f10.5,/,3x,a,f5.3,a,/)') & 
+                    read(5,*) dname, normal_is, file_water, file_surface, stride, box_length(:), opref(:), xi, fft_answer
+                    write(6,'(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i3,a,/,3x,a,3f10.5,/,3x,a,2f10.5,/,3x,a,f5.3,a,/,3x,2a,/)') & 
                         & "Willard-Chandler surface will be computed according to the following input:", &
                         & "Input trajectory: ", to_upper(trim(dname)), &
                         & "Interface normal along ", to_upper(normal_is), " axis", &
@@ -211,7 +251,8 @@
                         & "Processing every ", stride, " frames", &
                         & "Simulation box size: ", box_length(:), &
                         & "Order parameter references: ", opref(:), &
-                        & "Variance of the Gaussian functions: ", xi, " (in appropriate length units)"
+                        & "Variance of the Gaussian functions: ", xi, " (in appropriate length units)", &
+                        & "Computing FT of the interface height profile: ", to_upper(fft_answer)
 
                     if (normal_is == 'z' .or. normal_is == '') then
                             normal_along_z = .true.

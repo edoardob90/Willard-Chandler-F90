@@ -96,7 +96,7 @@
       write(f_wat,*) num_atom
       write(f_wat,10) box_length(:)
       
-      write(f_sur,*) 2 * coord(1) * coord(2) + 2 * (coord(1)-1) * (coord(2)-1)
+      write(f_sur,'(i6)') coord(1) * coord(2) + (coord(1)-1) * (coord(2)-1)
       write(f_sur,10) box_length(:)
       
       !write(f_dist,*) num_atom
@@ -129,16 +129,20 @@
 
 ! Apply periodic boundary conditions:
         xscratch = atoms(x)%xyz(1)
-        do while (xscratch .lt. 0.d0 .or. xscratch .gt. box_length(1))
+        do while (xscratch < 0.d0 .or. xscratch > box_length(1))
             xscratch = xscratch - sign(box_length(1),xscratch)
         enddo
         yscratch = atoms(x)%xyz(2)
-        do while (yscratch .lt. 0.d0 .or. yscratch .gt. box_length(2))
+        do while (yscratch < 0.d0 .or. yscratch > box_length(2))
             yscratch = yscratch - sign(box_length(2),yscratch)
+        enddo
+        zscratch = atoms(x)%xyz(3)
+        do while (zscratch < 0.d0 .or. zscratch > box_length(3))
+            zscratch = zscratch - sign(box_length(3),zscratch)
         enddo
 
 ! Write the (possibly shifted) positions of the atoms to the output file:
-       write(f_wat,11) atoms(x)%symbol, atoms(x)%xyz(1)+xscratch, atoms(x)%xyz(2)+yscratch, atoms(x)%xyz(3)
+       write(f_wat,11) atoms(x)%symbol, xscratch, yscratch, zscratch
 
       end do atom_loop
 
