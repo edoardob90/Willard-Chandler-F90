@@ -5,7 +5,7 @@ This code has two main purposes:
   
   2- (STILL IN DEV) It calculates the "interface profile function" (i.e. the height of the surface in each point of the grid) and Fourier-trasforms it.
   
-  From the average of the Fourier coefficients, within the framework of the Capillary Fluctuation Method, one can then get the stiffness of the interface and the interfacial free energy for that particular surface. This is accomplished by means of a fitting procedure of 1/<A_k^2> vs k^2, where k are the wave vector of the Fourier decomposition.
+  From the average of the Fourier coefficients, within the framework of the Capillary Fluctuation Method, one can then get the stiffness of the interface and the interfacial free energy for that particular surface. This is accomplished by means of a fitting procedure of 1/A_k^2 vs k^2, where k are the wave vector of the Fourier decomposition.
 
 
 There are a couple of LIMITATIONS:
