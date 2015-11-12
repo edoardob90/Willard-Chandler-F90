@@ -6,7 +6,7 @@
     implicit none
 ! This program calculates the Chandler surface for liquid water from an inputted XYZ file.
 
-     integer :: w, frame, i, j, ncol
+     integer :: w, frame, i, j, ntimes, L, M
 
 ! For now, unit cell is orthorhombic, so that the matrix is unity:
 
@@ -39,26 +39,28 @@
      write(*,*) coord(:)
 
 ! Initialize arrays:
-
-     !allocate( atom_name(num_atom) )
-     !allocate( atom_position(num_atom,3) )
+     L = coord(1)
+     M = coord(2)
 
      allocate( atoms(num_atom) )
      
-     !allocate( zheight(num_atom,2) )
+     allocate( gradient(L,M,2,3) )
+     allocate( mixed(L,M,2) )
 
-     allocate( gradient(coord(1),coord(2),2,3) )
-     allocate( mixed(coord(1),coord(2),2) )
+     allocate( surf2(L-1,M-1,2,3) )
+     allocate( surf(L,M,2,3) )
 
-     allocate( surf2(coord(1)-1,coord(2)-1,2,3) )
-     allocate( surf(coord(1),coord(2),2,3) )
+     allocate( h_xy(L,M), h_xy_t0(L,M))
+     allocate( ck_xy((L/2+1),M), ck_xy_r((L/2+1),M), ck_averaged((L/2+1),M) )
     
-! Call the subroutine to setup the FFT
 
-     call setup_fft()
-
+! Initialize to zero the reference of the profile function. This MUST BE DONE just one time here.
+     h_xy_t0 = 0.0d0
 
 ! Loop through each frame:
+
+     ntimes = 0 ! Number of times the whole computation is executed. To compute the time average
+     ck_averaged = 0.0d0 ! Averages of the coefficients, set initially to zero
 
      frame_loop: do frame=1,num_frames
      
@@ -69,6 +71,7 @@
                           cycle frame_loop
          
                      else
+
                          !!! PART ONE: find the Willard-Chandler surface !!!
                          
                          ! Write to standard output, write the frame header to the output files, read-in frame
@@ -84,6 +87,12 @@
                                
                                call find_surface()
                          
+                         ! Now that the surface is found, if we are at the first frame we need to save the profile of the surface
+                         ! as reference at t=0, to get later the correct height profile
+                         if (frame == stride) then
+                              h_xy_t0(:,:) = surf(:,:,1,3)
+                         end if
+
                          ! Find the gradient and the mixed terms, and interpolate between grid points to draw the
                          ! surface as a smooth function, in terms of triangles:
                          
@@ -91,8 +100,6 @@
                                
                                call triangles()
 
-                               if (frame/stride == 1) write(6,'(a,3f10.5)') "Grid spacing in each direction: ", gspacing
-                         
                                
                          !!! PART TWO: Fourier transform of the height profile of the interface !!!
                             
@@ -102,42 +109,53 @@
                          !  j = point of the grid along Y
                          !  z = height of the surface at the corresponding grid point
                          fft_compute: if (compute_fft) then
+
+                               plan = fftw_plan_dft_r2c_2d(M, L, h_xy, ck_xy, FFTW_ESTIMATE)
                         
                                do i=1,coord(1)
                                   do j=1,coord(2)
-                                     h_xy(i,j) = surf(i,j,1,3)
-                                     write(6,'(a,i,a,i,a,f15.5)') "h(i,j) for i= ",i," and j= ",j," is ",surf(i,j,1,3)
+                                ! Profile height of the surface at current frame MINUS the reference computed at the beginning
+                                     h_xy(i,j) = surf(i,j,1,3) - h_xy_t0(i,j)
                                   end do
                                end do
+
                                
-                               write(6,*) "Computing Fourier transform at frame ", frame
+                               write(999,*) "At frame ", frame, ":"
+                               write(999,*) h_xy(1,1), surf(1,1,1,3), "ref: ", h_xy_t0(1,1)
+                               
+                               write(6,'(a,i8)') "Computing Fourier transform at frame ", frame
  
                                call fftw_execute_dft_r2c(plan, h_xy, ck_xy)
 
                                ! Compute the square modulus of each Fourier coefficients
                                ck_xy_r(:,:) = ck_xy(:,:)*CONJG( ck_xy(:,:) )
-                               ncol=coord(1)/2+1
-                               write(999,'(<ncol>f20.10)') ( ck_xy_r(i,:), i=1,coord(1)/2+1 )
 
-                        end if fft_compute
+                               ck_averaged(:,:) = ck_averaged(:,:) + ck_xy_r(:,:)
+                               
+
+                         end if fft_compute
                          
+                         ntimes = ntimes + 1
                          
                      end if frame_skip
 
      end do frame_loop
+
+     ! Compute the average of the Fourier coefficients and write output
+     ck_averaged = ck_averaged / ntimes
+
+     write(f_fft,*) ( ck_averaged(i,:), i=1, (coord(1)/2+1) )
 
      write(*,*) 'Processing complete.'
 
     close(dat)
     close(f_wat)
     close(f_sur)
+    close(f_fft)
     
-    deallocate( atoms,surf,surf2,gradient,mixed )
+    deallocate( atoms, surf, surf2, gradient, mixed, ck_averaged, h_xy, h_xy_t0, ck_xy, ck_xy_r )
     
     call fftw_destroy_plan(plan)
-    call fftw_free(datar)
-    call fftw_free(datar2)
-    call fftw_free(datac)
 
     contains
 
@@ -236,14 +254,18 @@
                             compute_fft = .false.
                             fft_answer = "no"
                         end if
+                    
+                    write(*,'(3x,a)', advance='no') "File of REAL Fourier coefficients [fourier.dat] >> "
+                    read(5,'(a)') file_fft
+                        call set_default(file_fft, 'fourier.dat')
 
                 ! If '-b' is passed, batch mode: read from standard input
                 else if (narg == 1 .and. (arg == '-b' .or. arg == '--batch')) then
                 
                     write(6,'(a,/)') "Surface.x is in batch mode... reading from standard input"
                     
-                    read(5,*) dname, normal_is, file_water, file_surface, stride, box_length(:), opref(:), xi, fft_answer
-                    write(6,'(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i3,a,/,3x,a,3f10.5,/,3x,a,2f10.5,/,3x,a,f5.3,a,/,3x,2a,/)') & 
+                    read(5,*) dname, normal_is, file_water, file_surface, stride, box_length(:), opref(:), xi, fft_answer, file_fft
+                    write(6,'(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i3,a,/,3x,a,3f10.5,/,3x,a,2f10.5,/,3x,a,f5.3,a,/,3x,2a,/,3x,2a,/)') & 
                         & "Willard-Chandler surface will be computed according to the following input:", &
                         & "Input trajectory: ", to_upper(trim(dname)), &
                         & "Interface normal along ", to_upper(normal_is), " axis", &
@@ -252,13 +274,22 @@
                         & "Simulation box size: ", box_length(:), &
                         & "Order parameter references: ", opref(:), &
                         & "Variance of the Gaussian functions: ", xi, " (in appropriate length units)", &
-                        & "Computing FT of the interface height profile: ", to_upper(fft_answer)
+                        & "Computing FT of the interface height profile: ", to_upper(fft_answer), &
+                        & "REAL Fourier coefficients will be written to: ", to_upper(trim(file_fft))
 
+                    ! Check surface normal
                     if (normal_is == 'z' .or. normal_is == '') then
                             normal_along_z = .true.
                             normal_is = 'z'
                     else
                             normal_along_z = .false.
+                    end if
+
+                    ! Check if FFT is to be computed
+                    if (fft_answer(1:1) == 'y' .or. fft_answer(1:1) == 'Y') then
+                        compute_fft = .true.
+                    else
+                        compute_fft = .false.
                     end if
 
                 

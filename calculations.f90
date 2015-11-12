@@ -17,7 +17,13 @@
 ! to find the root of density_field(X,Y,z) - const = 0.d0 for this X and Y - thus find both surfaces.
 
       found = .false.
+
+      ! Initialize surface relative matrices
       surf = 0.d0
+      h_xy = 0.0d0
+      ck_xy = (0.0d0,0.0d0)
+      ck_xy_r = 0.d0
+      
       do x=1,coord(1)
        do y=1,coord(2)
         surf(x,y,:,1) = (x-1)*gspacing(1)
@@ -151,7 +157,11 @@
       gspacing(i) = box_length(i)/(coord(i) - 1)
      enddo
 
-    end subroutine
+     write(6,'(a,3f10.5)') "Grid spacing in each direction: ", gspacing(:)
+
+     return
+
+    end subroutine calculate_grid
 ! -----------------------------------------------------------------------------------------------------------------------------
     subroutine find_terms_int()
     use mod_surf
@@ -198,7 +208,7 @@
       enddo
      enddo
 
-    write(6,*) "Grid spacing in each direction: ", gspacing
+    !write(6,*) "Grid spacing in each direction: ", gspacing
 
 ! Find and draw the surface 'in-between' the grid points:
      xypoint(1) = 0.5d0 * gspacing(1)

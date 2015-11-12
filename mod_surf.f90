@@ -30,8 +30,8 @@ module mod_surf
     real(DP), dimension(3,3) :: unit_cell, unit_cell_inv
 
 ! Input and output:
-    character(len=100) :: dname, file_water, file_surface, file_dist, input, input1
-    integer :: dat, f_wat, f_sur, f_dist, stride
+    character(len=100) :: dname, file_water, file_surface, file_dist, input, input1, file_fft
+    integer :: dat, f_wat, f_sur, f_dist, f_fft, stride
     real(DP) :: opref(2) ! the two reference values for the order parameter
     logical :: normal_along_z, pdb
     character(len=1) :: normal_is
@@ -49,9 +49,11 @@ module mod_surf
 ! Surface variables for Fourier Transform
    logical :: compute_fft
    character(len=3) :: fft_answer
-   real(C_DOUBLE), pointer :: h_xy(:,:) ! The surface matrix, a reshape of the surf(:,:,:,:) matrix
-   complex(C_DOUBLE_COMPLEX), pointer :: ck_xy(:,:) ! The matrix of Fourier coefficients
-   real(C_DOUBLE), pointer :: ck_xy_r(:,:) ! Square moduli of the coefficients
+
+   real(C_DOUBLE), allocatable :: h_xy(:,:), h_xy_t0(:,:) ! The height profile matrix and its reference at t=0
+   real(C_DOUBLE), allocatable :: ck_xy_r(:,:), ck_averaged(:,:) ! Square moduli of the coefficients and their time average
+   complex(C_DOUBLE_COMPLEX), allocatable :: ck_xy(:,:) ! The matrix of Fourier coefficients
+   
    type(C_PTR) :: plan, datac, datar, datar2
 
 ! =============================
@@ -318,12 +320,10 @@ module mod_surf
        
        ! Allocate in and out matrices
        call c_f_pointer(datar, h_xy, [L,M]) ! surface
-       call c_f_pointer(datac, ck_xy, [(L/2+1),M])  ! coeffs
-       call c_f_pointer(datar2, ck_xy_r, [(L/2+1),M])  ! coeffs, square moduli
-
-       ! Initialize in and out matrices
-       h_xy = 0.0d0
-       ck_xy = (0.0d0,0.0d0)
+       call c_f_pointer(datar, h_xy_t0, [L,M]) ! surface at t=0
+       call c_f_pointer(datac, ck_xy, [(L/2+1),M])  ! ck
+       call c_f_pointer(datar2, ck_xy_r, [(L/2+1),M])  ! |ck|^2
+       call c_f_pointer(datar2, ck_averaged, [(L/2+1),M])  ! <|ck|^2>
 
        ! Build plan
        plan = fftw_plan_dft_r2c_2d(M, L, h_xy, ck_xy, FFTW_ESTIMATE)

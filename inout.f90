@@ -12,10 +12,11 @@
         f_wat = 8
         f_sur = 9
         f_dist = 10
+        f_fft = 11
     ! Find number of lines in file, store as num_frames:
         open(f_wat, file=trim(adjustl(file_water)), status='unknown', action='readwrite')
         open(f_sur, file=trim(adjustl(file_surface)), status='unknown', action='readwrite')     
-        !open(f_dist,file=file_dist)
+        open(f_fft, file=trim(adjustl(file_fft)), status='unknown', action='readwrite')
         open(dat, file=trim(adjustl(dname)), status='old', action='read')
         
         num_frames = 0
@@ -86,7 +87,7 @@
 
 ! Write to standard output at the beginning of the frame:
 
-      write(*,*) 'Processing frame ',frame,' of ',num_frames
+      write(6,'(a,i6,a,i6)') 'Processing frame ',frame,' of ',num_frames
 
 ! Write frame headers to output files:
 
