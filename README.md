@@ -18,6 +18,9 @@ There are a couple of LIMITATIONS:
 
 VERY BRIEF USAGE INSTRUCTIONS:
   
-  The code can be compiled directly with a simple "make" command in the main directory. You must have installed "makedepf90", which builds for you all the dependecies of the code. BE AWARE that the Makefile is configured to use the Intel(R) Fortran Compiler, which gives the best performances on Intel CPU. The user should adjust this at his needs.
+  The code can be compiled directly with a simple "make" command in the main directory. You must have installed "makedepf90", which builds for you all the dependecies of the code. BE AWARE that the Makefile is configured to use the Intel(R) Fortran Compiler, which gives the best performances on Intel CPU.
+  If one wants to use the GNU Fortran compiler:
+    - modify the compiler variable: FC=gfortran
+    - modify the flags: FFLAGS=-03
   
   The only external tool needed is the FFTW library, freely available and installable/compilable. The Makefile will link the executable by looking up FFTW libraries in the standard location. If they are in a particular path, the user should add the option "-L/path/to/fftw3" to the LDFLAGS variable.
