@@ -39,6 +39,7 @@
      write(*,*) coord(:)
 
 ! Initialize arrays:
+     ! Shortcuts of arrays extents
      L = coord(1)
      M = coord(2)
 
@@ -52,6 +53,7 @@
 
      allocate( h_xy(L,M), h_xy_t0(L,M))
      allocate( ck_xy((L/2+1),M), ck_xy_r((L/2+1),M), ck_averaged((L/2+1),M) )
+     allocate( k_x(L), k_y(M) )
     
 
 ! Initialize to zero the reference of the profile function. This MUST BE DONE just one time here.
@@ -111,24 +113,42 @@
                          fft_compute: if (compute_fft) then
 
                                plan = fftw_plan_dft_r2c_2d(M, L, h_xy, ck_xy, FFTW_ESTIMATE)
-                        
-                               do i=1,coord(1)
-                                  do j=1,coord(2)
-                                ! Profile height of the surface at current frame MINUS the reference computed at the beginning
-                                     h_xy(i,j) = surf(i,j,1,3) - h_xy_t0(i,j)
-                                  end do
+
+                               ! Wave vectors of the Fourier sum
+                               ! In general: k_(x,y) = (i,j) * 2*pi*spacing/L_(x,y)
+                               do i=1,L
+                                  k_x(i) = i * 2*pi*grid_spacing/box_length(1)
+                               end do
+                               do j=1,M
+                                  k_y(j) = j * 2*pi*grid_spacing/box_length(2)
                                end do
 
-                               
-                               write(999,*) "At frame ", frame, ":"
-                               write(999,*) h_xy(1,1), surf(1,1,1,3), "ref: ", h_xy_t0(1,1)
+                               ! Profile height of the surface at current frame MINUS the reference computed at the beginning
+                               forall (i=1:L, j=1:M)
+                                   h_xy(i,j) = surf(i,j,1,3) - h_xy_t0(i,j)
+                               end forall
+                        
+                               !write(999,*) "At frame ", frame, ":"
+                               !write(999,*) h_xy(1,1), surf(1,1,1,3), "ref: ", h_xy_t0(1,1)
                                
                                write(6,'(a,i8)') "Computing Fourier transform at frame ", frame
  
                                call fftw_execute_dft_r2c(plan, h_xy, ck_xy)
 
                                ! Compute the square modulus of each Fourier coefficients
-                               ck_xy_r(:,:) = ck_xy(:,:)*CONJG( ck_xy(:,:) )
+                               ck_xy_r(:,:) = ck_xy(:,:) * CONJG(ck_xy(:,:))
+     
+                               if (frame /= stride) then
+                                  write(999,*) "*************************"
+                                  write(999,*) "Frame: ", frame
+                                  write(999,*) "*************************"
+                                  do i=1,L
+                                     do j=1,M
+                                        write(999,*) k_x(i), k_y(j), ck_xy_r(i,j)
+                                     end do
+                                  end do
+                                  write(999,*) "*************************"
+                               end if
 
                                ck_averaged(:,:) = ck_averaged(:,:) + ck_xy_r(:,:)
                                
@@ -144,7 +164,12 @@
      ! Compute the average of the Fourier coefficients and write output
      ck_averaged = ck_averaged / ntimes
 
-     write(f_fft,*) ( ck_averaged(i,:), i=1, (coord(1)/2+1) )
+     write(*,*) "Writing averaged Fourier coefficients ..."
+     do i=1,L
+        do j=1,M
+           write(f_fft,'(3f20.10)') k_x(i), k_y(j), ck_averaged(i,j)
+        end do
+     end do
 
      write(*,*) 'Processing complete.'
 
@@ -153,7 +178,7 @@
     close(f_sur)
     close(f_fft)
     
-    deallocate( atoms, surf, surf2, gradient, mixed, ck_averaged, h_xy, h_xy_t0, ck_xy, ck_xy_r )
+    deallocate( atoms, surf, surf2, gradient, mixed, ck_averaged, h_xy, h_xy_t0, ck_xy, ck_xy_r, k_x, k_y)
     
     call fftw_destroy_plan(plan)
 
@@ -265,7 +290,7 @@
                     write(6,'(a,/)') "Surface.x is in batch mode... reading from standard input"
                     
                     read(5,*) dname, normal_is, file_water, file_surface, stride, box_length(:), opref(:), xi, fft_answer, file_fft
-                    write(6,'(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i3,a,/,3x,a,3f10.5,/,3x,a,2f10.5,/,3x,a,f5.3,a,/,3x,2a,/,3x,2a,/)') & 
+                    write(6,'(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i10,a,/,3x,a,3f10.5,/,3x,a,2f10.5,/,3x,a,f5.3,a,/,3x,2a,/,3x,2a,/)') & 
                         & "Willard-Chandler surface will be computed according to the following input:", &
                         & "Input trajectory: ", to_upper(trim(dname)), &
                         & "Interface normal along ", to_upper(normal_is), " axis", &

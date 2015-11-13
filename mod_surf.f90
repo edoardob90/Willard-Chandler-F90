@@ -11,6 +11,7 @@ module mod_surf
 ! Constants and input parameters:
     real(DP) :: xi,ximin2,ximin4,ninxisq,phi3xi,const,prefac,xscratch,yscratch,zscratch
     real(DP), dimension(3) :: box_length, gspacing
+    real(DP), parameter :: grid_spacing=0.5d0
     integer :: coord(3)
 
 ! Surface variables:
@@ -50,11 +51,17 @@ module mod_surf
    logical :: compute_fft
    character(len=3) :: fft_answer
 
-   real(C_DOUBLE), allocatable :: h_xy(:,:), h_xy_t0(:,:) ! The height profile matrix and its reference at t=0
-   real(C_DOUBLE), allocatable :: ck_xy_r(:,:), ck_averaged(:,:) ! Square moduli of the coefficients and their time average
+   ! Arrays related to the FT of the interface profile:
+   !   h_xy, h_xy_t0: profile function at each grid point and the reference at t=0
+   !   ck_xy: complex Fourier coeffs
+   !   ck_xy_r, ck_averaged: real Fourier coeffs and the time-average
+   !   k_x, k_y: wave vectors
+   real(C_DOUBLE), allocatable :: h_xy(:,:), h_xy_t0(:,:), & 
+                                & ck_xy_r(:,:), ck_averaged(:,:), &
+                                & k_x(:), k_y(:)
    complex(C_DOUBLE_COMPLEX), allocatable :: ck_xy(:,:) ! The matrix of Fourier coefficients
    
-   type(C_PTR) :: plan, datac, datar, datar2
+   type(C_PTR) :: plan
 
 ! =============================
 ! Functions and subroutines
@@ -303,32 +310,5 @@ module mod_surf
     return
 
     end subroutine
-! ------------------------------------------------------------------------------------------------------------------------
-   subroutine setup_fft()
-
-       implicit none
-
-       integer :: L, M ! Dimension of the in out matrices, for simplicity
-
-       L = coord(1)
-       M = coord(2)
-
-       ! Define fft data to allocate in and out matrices
-       datar = fftw_alloc_real( int( L * M, C_SIZE_T ) )
-       datac = fftw_alloc_complex( int( (L/2+1) * M, C_SIZE_T ) )
-       datar2 = fftw_alloc_real( int( (L/2+1) * M, C_SIZE_T ) )
-       
-       ! Allocate in and out matrices
-       call c_f_pointer(datar, h_xy, [L,M]) ! surface
-       call c_f_pointer(datar, h_xy_t0, [L,M]) ! surface at t=0
-       call c_f_pointer(datac, ck_xy, [(L/2+1),M])  ! ck
-       call c_f_pointer(datar2, ck_xy_r, [(L/2+1),M])  ! |ck|^2
-       call c_f_pointer(datar2, ck_averaged, [(L/2+1),M])  ! <|ck|^2>
-
-       ! Build plan
-       plan = fftw_plan_dft_r2c_2d(M, L, h_xy, ck_xy, FFTW_ESTIMATE)
-
-       return
-   end subroutine setup_fft
 
 end module mod_surf

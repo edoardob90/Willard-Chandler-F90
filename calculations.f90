@@ -143,7 +143,6 @@
     use mod_surf
     implicit none
 
-    real(DP) :: grid_spacing
     integer :: i
 
 ! Calculate grid
@@ -151,7 +150,6 @@
      !read(input,*) (box_length(x),x=1,3,1)
 
      coord = 0
-     grid_spacing = 0.5d0
      do i=1,3
       coord(i) = 1 + nint(box_length(i) / grid_spacing)
       gspacing(i) = box_length(i)/(coord(i) - 1)
