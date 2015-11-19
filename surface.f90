@@ -51,13 +51,13 @@
      allocate( surf2(L-1,M-1,2,3) )
      allocate( surf(L,M,2,3) )
 
-     allocate( h_xy(L,M), h_xy_t0(L,M))
-     allocate( ck_xy((L/2+1),M), ck_xy_r((L/2+1),M), ck_averaged((L/2+1),M) )
-     allocate( k_x(L), k_y(M) )
+     allocate( h_xy(L-1,M-1))
+     allocate( ck_xy(((L-1)/2+1),M-1), ck_xy_r(((L-1)/2+1),M-1), ck_averaged(((L-1)/2+1),M-1) )
+     allocate( k_x(L-1), k_y(M-1) )
     
 
 ! Initialize to zero the reference of the profile function. This MUST BE DONE just one time here.
-     h_xy_t0 = 0.0d0
+!     h_xy_t0 = 0.0d0
 
 ! Loop through each frame:
 
@@ -89,12 +89,6 @@
                                
                                call find_surface()
                          
-                         ! Now that the surface is found, if we are at the first frame we need to save the profile of the surface
-                         ! as reference at t=0, to get later the correct height profile
-                         if (frame == stride) then
-                              h_xy_t0(:,:) = surf(:,:,1,3)
-                         end if
-
                          ! Find the gradient and the mixed terms, and interpolate between grid points to draw the
                          ! surface as a smooth function, in terms of triangles:
                          
@@ -112,20 +106,20 @@
                          !  z = height of the surface at the corresponding grid point
                          fft_compute: if (compute_fft) then
 
-                               plan = fftw_plan_dft_r2c_2d(M, L, h_xy, ck_xy, FFTW_ESTIMATE)
+                               plan = fftw_plan_dft_r2c_2d(M-1, L-1, h_xy, ck_xy, FFTW_ESTIMATE)
 
                                ! Wave vectors of the Fourier sum
-                               ! In general: k_(x,y) = (i,j) * 2*pi*spacing/L_(x,y)
-                               do i=1,L
-                                  k_x(i) = i * 2*pi*grid_spacing/box_length(1)
+                               ! In general: k_(x,y) = (i,j) * 2*pi/L_(x,y)
+                               do i=1,L-1
+                                  k_x(i) = (i-1) * 2*pi/box_length(1)
                                end do
-                               do j=1,M
-                                  k_y(j) = j * 2*pi*grid_spacing/box_length(2)
+                               do j=1,M-1
+                                  k_y(j) = (j-1) * 2*pi/box_length(2)
                                end do
 
                                ! Profile height of the surface at current frame MINUS the reference computed at the beginning
-                               forall (i=1:L, j=1:M)
-                                   h_xy(i,j) = surf(i,j,1,3) - h_xy_t0(i,j)
+                               forall (i=1:L-1, j=1:M-1)
+                                   h_xy(i,j) = surf2(i,j,1,3) 
                                end forall
                         
                                !write(999,*) "At frame ", frame, ":"
@@ -136,14 +130,14 @@
                                call fftw_execute_dft_r2c(plan, h_xy, ck_xy)
 
                                ! Compute the square modulus of each Fourier coefficients
-                               ck_xy_r(:,:) = ck_xy(:,:) * CONJG(ck_xy(:,:))
+                               ck_xy_r(:,:) = ABS(ck_xy(:,:))**2
      
                                if (frame /= stride) then
                                   write(999,*) "*************************"
                                   write(999,*) "Frame: ", frame
                                   write(999,*) "*************************"
-                                  do i=1,L
-                                     do j=1,M
+                                  do i=1,L-1
+                                     do j=1,M-1
                                         write(999,*) k_x(i), k_y(j), ck_xy_r(i,j)
                                      end do
                                   end do
@@ -165,8 +159,8 @@
      ck_averaged = ck_averaged / ntimes
 
      write(*,*) "Writing averaged Fourier coefficients ..."
-     do i=1,L
-        do j=1,M
+     do i=1,L-1
+        do j=1,M-1
            write(f_fft,'(3f20.10)') k_x(i), k_y(j), ck_averaged(i,j)
         end do
      end do
@@ -178,7 +172,7 @@
     close(f_sur)
     close(f_fft)
     
-    deallocate( atoms, surf, surf2, gradient, mixed, ck_averaged, h_xy, h_xy_t0, ck_xy, ck_xy_r, k_x, k_y)
+    deallocate( atoms, surf, surf2, gradient, mixed, ck_averaged, h_xy, ck_xy, ck_xy_r, k_x, k_y)
     
     call fftw_destroy_plan(plan)
 
