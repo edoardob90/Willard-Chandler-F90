@@ -35,8 +35,6 @@
 
      call calculate_grid()
 
-     write(*,*) box_length
-     write(*,*) coord(:)
 
 ! Initialize arrays:
      ! Shortcuts of arrays extents
@@ -104,6 +102,7 @@
                          !  i = point of the grid along X
                          !  j = point of the grid along Y
                          !  z = height of the surface at the corresponding grid point
+
                          fft_compute: if (compute_fft) then
 
                                plan = fftw_plan_dft_r2c_2d(M-1, L-1, h_xy, ck_xy, FFTW_ESTIMATE)
@@ -132,17 +131,17 @@
                                ! Compute the square modulus of each Fourier coefficients
                                ck_xy_r(:,:) = ABS(ck_xy(:,:))**2
      
-                               if (frame /= stride) then
-                                  write(999,*) "*************************"
-                                  write(999,*) "Frame: ", frame
-                                  write(999,*) "*************************"
-                                  do i=1,L-1
-                                     do j=1,M-1
-                                        write(999,*) k_x(i), k_y(j), ck_xy_r(i,j)
-                                     end do
-                                  end do
-                                  write(999,*) "*************************"
-                               end if
+                               !!!if (frame /= stride) then
+                               !!!   write(999,*) "*************************"
+                               !!!   write(999,*) "Frame: ", frame
+                               !!!   write(999,*) "*************************"
+                               !!!   do i=1,L-1
+                               !!!      do j=1,M-1
+                               !!!         write(999,*) k_x(i), k_y(j), ck_xy_r(i,j)
+                               !!!      end do
+                               !!!   end do
+                               !!!   write(999,*) "*************************"
+                               !!!end if
 
                                ck_averaged(:,:) = ck_averaged(:,:) + ck_xy_r(:,:)
                                
@@ -158,14 +157,15 @@
      ! Compute the average of the Fourier coefficients and write output
      ck_averaged = ck_averaged / ntimes
 
-     write(*,*) "Writing averaged Fourier coefficients ..."
-     do i=1,L-1
+     write(output_unit,*) "Writing averaged Fourier coefficients ..."
+
+     do i=1,(L-1)/2+1
         do j=1,M-1
            write(f_fft,'(3f20.10)') k_x(i), k_y(j), ck_averaged(i,j)
         end do
      end do
 
-     write(*,*) 'Processing complete.'
+     write(output_unit,*) 'Processing complete.'
 
     close(dat)
     close(f_wat)
@@ -180,14 +180,14 @@
 
         subroutine print_help()
           
-          write(6,'(a)') 'Usage: Surface.x [-b] [-i] <ARGUMENTS>'
-          write(6,'(a)') ''
-          write(6,'(a)') 'Surface.x modes:'
-          write(6,'(a)') ''
-          write(6,'(a)') '  -i, --interactive        Ask for input interactively'
-          write(6,'(a)') ''
-          write(6,'(a)') '  -b, --batch        Read from standard input. The order MUST be the following:'
-          write(6,'(a)') '    <input_traj> <interface normal (x,y,z)> <wrapped_traj> <surface_file> &
+          write(error_unit,'(a)') 'Usage: Surface.x [-b] [-i] <ARGUMENTS>'
+          write(error_unit,'(a)') ''
+          write(error_unit,'(a)') 'Surface.x modes:'
+          write(error_unit,'(a)') ''
+          write(error_unit,'(a)') '  -i, --interactive        Ask for input interactively'
+          write(error_unit,'(a)') ''
+          write(error_unit,'(a)') '  -b, --batch        Read from standard input. The order MUST be the following:'
+          write(error_unit,'(a)') '    <input_traj> <interface normal (x,y,z)> <wrapped_traj> <surface_file> &
                                & <stride> <box: lx ly lz> <op ref values: 1 2> <Gaussian xi> &
                                <Compute FT [yes/no]>'
 
@@ -223,22 +223,22 @@
         parser: if (narg == 0) then
                 ! If no arguments are passed, then read from standard input
                 
-                    print *, "No arguments supplied!"
+                    write(error_unit,*) "No arguments supplied!"
                     call print_help()
                     stop
             
                 ! Interactive mode if '-i' is passed as only option
                 else if (narg == 1 .and. (arg =='-i' .or. arg == '--interactive')) then
                 
-                    write(*,'(a,/)') "Surface.x is in interactive mode ..."
+                    write(output_unit,'(a,/)') "Surface.x is in interactive mode ..."
                     
-                    write(*,'(3x,a)', advance='no') "Trajectory file [traj.xyz] >> "
-                    read(*,'(a)') dname
+                    write(output_unit,'(3x,a)', advance='no') "Trajectory file [traj.xyz] >> "
+                    read(input_unit,'(a)') dname
                         call set_default(dname, 'traj.xyz')
                     ! After reading traj file, we need to know if the expected interface is perpendicular to
                     ! Z-axis (default for this code). If not, we must record this to swap coordinates later
-                    write(*,'(3x,a)', advance='no') "Interface normal along which axis? [x, y or z; default is z] >> "
-                    read(*,'(a)') normal_is
+                    write(output_unit,'(3x,a)', advance='no') "Interface normal along which axis? [x, y or z; default is z] >> "
+                    read(input_unit,'(a)') normal_is
                         if (normal_is == 'z' .or. normal_is == '') then
                             normal_along_z = .true.
                             normal_is = 'z'
@@ -246,26 +246,26 @@
                             normal_along_z = .false.
                         end if
                     
-                    write(*,'(3x,a)', advance='no') "Output files [wrap_traj.xyz | surface.out] >> "
-                    read(*,'(2a)') file_water, file_surface
+                    write(output_unit,'(3x,a)', advance='no') "Output files [wrap_traj.xyz | surface.out] >> "
+                    read(input_unit,'(2a)') file_water, file_surface
                         call set_default(file_water, 'wrap_traj.xyz')
                         call set_default(file_surface, 'surface.out')
                     
-                    write(*,'(3x,a)', advance='no') "Stride [0 for default] >> "
-                    read(*,*) stride
+                    write(output_unit,'(3x,a)', advance='no') "Stride [0 for default] >> "
+                    read(input_unit,*) stride
                         if (stride == 0) stride = 1
                     
-                    write(*,'(3x,a)', advance='no') "Box size (lx ly lz) >> "
-                    read(*,*) box_length(:)
+                    write(output_unit,'(3x,a)', advance='no') "Box size (lx ly lz) >> "
+                    read(input_unit,*) box_length(:)
                     
-                    write(*,'(3x,a)', advance='no') "Order parameter reference values (op1 op2) >> "
-                    read(*,*) opref(:)
+                    write(output_unit,'(3x,a)', advance='no') "Order parameter reference values (op1 op2) >> "
+                    read(input_unit,*) opref(:)
                     
-                    write(*,'(3x,a)', advance='no') "Gaussian variance [xi] >> "
-                    read(*,*) xi
+                    write(output_unit,'(3x,a)', advance='no') "Gaussian variance [xi] >> "
+                    read(input_unit,*) xi
                 
-                    write(*,'(3x,a)', advance='no') "Compute FT of height profile? [Y/n] >> "
-                    read(*,'(a)') fft_answer
+                    write(output_unit,'(3x,a)', advance='no') "Compute FT of height profile? [Y/n] >> "
+                    read(input_unit,'(a)') fft_answer
                         if (fft_answer(1:1) == "y" .or. fft_answer(1:1) == "Y") then
                             compute_fft = .true.
                             fft_answer = "yes"
@@ -274,17 +274,17 @@
                             fft_answer = "no"
                         end if
                     
-                    write(*,'(3x,a)', advance='no') "File of REAL Fourier coefficients [fourier.dat] >> "
-                    read(5,'(a)') file_fft
+                    write(output_unit,'(3x,a)', advance='no') "File of REAL Fourier coefficients [fourier.dat] >> "
+                    read(input_unit,'(a)') file_fft
                         call set_default(file_fft, 'fourier.dat')
 
                 ! If '-b' is passed, batch mode: read from standard input
                 else if (narg == 1 .and. (arg == '-b' .or. arg == '--batch')) then
                 
-                    write(6,'(a,/)') "Surface.x is in batch mode... reading from standard input"
+                    write(output_unit,'(a,/)') "Surface.x is in batch mode... reading from standard input"
                     
-                    read(5,*) dname, normal_is, file_water, file_surface, stride, box_length(:), opref(:), xi, fft_answer, file_fft
-                    write(6,'(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i10,a,/,3x,a,3f10.5,/,3x,a,2f10.5,/,3x,a,f5.3,a,/,3x,2a,/,3x,2a,/)') & 
+                    read(input_unit,*) dname, normal_is, file_water, file_surface, stride, box_length(:), opref(:), xi, fft_answer, file_fft
+                    write(output_unit, '(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i10,a,/,3x,a,3f10.5,/,3x,a,2f10.5,/,3x,a,f5.3,a,/,3x,2a,/,3x,2a,/)') & 
                         & "Willard-Chandler surface will be computed according to the following input:", &
                         & "Input trajectory: ", to_upper(trim(dname)), &
                         & "Interface normal along ", to_upper(normal_is), " axis", &
@@ -313,7 +313,7 @@
 
                 
                 else
-                    write(6,*) "Wrong number of arguments or option not recognized. Stop."
+                    write(error_unit,*) "Wrong number of arguments or option not recognized. Stop."
                     call print_help()
                     stop
                                         

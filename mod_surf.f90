@@ -1,4 +1,5 @@
 module mod_surf
+    use, intrinsic :: iso_fortran_env
     use kinds, only: DP
     use constants, only: pi
     use fftw3
@@ -56,7 +57,7 @@ module mod_surf
    !   ck_xy: complex Fourier coeffs
    !   ck_xy_r, ck_averaged: real Fourier coeffs and the time-average
    !   k_x, k_y: wave vectors
-   real(C_DOUBLE), allocatable :: h_xy(:,:), h_xy_t0(:,:), & 
+   real(C_DOUBLE), allocatable :: h_xy(:,:), & 
                                 & ck_xy_r(:,:), ck_averaged(:,:), &
                                 & k_x(:), k_y(:)
    complex(C_DOUBLE_COMPLEX), allocatable :: ck_xy(:,:) ! The matrix of Fourier coefficients

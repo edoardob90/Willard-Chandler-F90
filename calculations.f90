@@ -8,10 +8,9 @@
     use mod_interp
     implicit none
 
-    integer u,v,w,x,y
-    logical allfound,found(coord(1),coord(2),2)
-    real(DP) lowbound,upbound
-    integer xmin,xmax,ymin,ymax
+    integer :: u,v,w,x,y,xmin,xmax,ymin,ymax
+    logical :: allfound,found(coord(1),coord(2),2)
+    real(DP) :: lowbound,upbound
 
 ! Firstly, take the centre of the box (box_length(1)/2,box_length(2)/2,0), and use Brent's algorithm
 ! to find the root of density_field(X,Y,z) - const = 0.d0 for this X and Y - thus find both surfaces.
@@ -55,30 +54,30 @@
         do u = xmin-1,xmax+1
          do v=ymin-1,ymax+1
           if ((u .ge. 1) .and. (u .le. coord(1)) .and. (v .ge. 1) .and. (v .le. coord(2))) then
-           if (.not. found(u,v,w)) then
+              if (.not. found(u,v,w)) then
 
-! Find the lower and upper bounds for the z-value:
-            lowbound = box_length(3)
-            upbound = 0.d0
-            do x=u-1,u+1
-             do y=v-1,v+1
-              if ((x .ge. 1) .and. (x .le. coord(1)) .and. (y .ge. 1) .and. (y .le. coord(2))) then
-               if (found(x,y,w))  then
-                lowbound = min(lowbound,surf(x,y,w,3))
-                upbound = max(upbound,surf(x,y,w,3))
-               endif
+                  ! Find the lower and upper bounds for the z-value:
+                  lowbound = box_length(3)
+                  upbound = 0.d0
+                  do x=u-1,u+1
+                   do y=v-1,v+1
+                      if ((x .ge. 1) .and. (x .le. coord(1)) .and. (y .ge. 1) .and. (y .le. coord(2))) then
+                          if (found(x,y,w))  then
+                              lowbound = min(lowbound,surf(x,y,w,3))
+                              upbound = max(upbound,surf(x,y,w,3))
+                          endif
+                       endif
+                   enddo
+                  enddo
+                  lowbound = lowbound - gspacing(3)
+                  upbound = upbound + gspacing(3)
+                  call bracket(surf(u,v,w,1),surf(u,v,w,2),lowbound,upbound,density_field_const,1.2d0)
+
+                  ! Use Brent's algorithm to find the z-value:
+                  surf(u,v,w,3) = brent(lowbound,upbound,1.d-9,surf(u,v,w,1),surf(u,v,w,2),density_field_const)
+                  found(u,v,w) = .true.
+
               endif
-             enddo
-            enddo
-            lowbound = lowbound - gspacing(3)
-            upbound = upbound + gspacing(3)
-            call bracket(surf(u,v,w,1),surf(u,v,w,2),lowbound,upbound,density_field_const,1.2d0)
-
-! Use Brent's algorithm to find the z-value:
-            surf(u,v,w,3) = brent(lowbound,upbound,1.d-9,surf(u,v,w,1),surf(u,v,w,2),density_field_const)
-            found(u,v,w) = .true.
-
-           endif
           endif
          enddo
         enddo
@@ -97,6 +96,8 @@
         enddo
        enddo
       enddo
+
+      return
 
     end subroutine
 ! -----------------------------------------------------------------------------------------------------------------------------
@@ -136,6 +137,8 @@
     find_grad(2) = -1.d0 * anszy
     find_grad(3) = 1.d0
     find_grad = find_grad / dsqrt(find_grad(1)**2 + find_grad(2)**2 + find_grad(3)**2)
+
+    return
 
     end subroutine
 ! -----------------------------------------------------------------------------------------------------------------------------
@@ -179,6 +182,8 @@
         enddo
        enddo
       enddo
+
+      return
 
     end subroutine
 ! -----------------------------------------------------------------------------------------------------------------------------
@@ -226,61 +231,5 @@
       enddo
      enddo
 
-    end subroutine
-! -----------------------------------------------------------------------------------------------------------------------------
-!!!    subroutine find_atom_height_grad(w)
-!!!    use mod_surf
-!!!    implicit none
-!!!
-!!!    integer w,gridx,gridy
-!!!    real(DP) xyzpoint(2),grad_interp1(3),grad_interp2(3)
-!!!
-!!!! What is the atom's height compared to the two surfaces? Folding the atom back into the box allows
-!!!! this comparison to be carried out:
-!!!
-!!!    xscratch = atom_position(w,1)
-!!!    do while (xscratch .lt. 0.d0 .or. xscratch .gt. box_length(1))
-!!!     xscratch = xscratch - sign(box_length(1),xscratch)
-!!!    enddo
-!!!    yscratch = atom_position(w,2)
-!!!    do while (yscratch .lt. 0.d0 .or. yscratch .gt. box_length(2))
-!!!     yscratch = yscratch - sign(box_length(2),yscratch)
-!!!    enddo
-!!!
-!!!! Find the (x,y) grid point such that (x,y),(x,y+1),(x+1,y),(x+1,y+1) bound this atom's (x,y) position:
-!!!
-!!!    gridx = floor(xscratch / gspacing(1))
-!!!    gridy = floor(yscratch / gspacing(2))
-!!!    xyzpoint(1) = (xscratch/gspacing(1)) - gridx
-!!!    xyzpoint(2) = (yscratch/gspacing(2)) - gridy
-!!!    xyzpoint(1) = xyzpoint(1) * gspacing(1)
-!!!    xyzpoint(2) = xyzpoint(2) * gspacing(2)
-!!!
-!!!! Find the z positions of the two surfaces for this pair of (x,y) values, and thus the height
-!!!! of the atom below both the upper and lower surface:
-!!!
-!!!    call int_surface(1,gridx+1,gridy+1,zheight(w,1),xyzpoint,grad_interp1)
-!!!    call int_surface(2,gridx+1,gridy+1,zheight(w,2),xyzpoint,grad_interp2)
-!!!    zheight(w,1) = zheight(w,1) - atom_position(w,3)
-!!!    zheight(w,2) = atom_position(w,3) - zheight(w,2)
-!!!!    if (dabs(zheight(w,1)) .gt. (0.5d0*box_length(3))) zheight(w,1) = zheight(w,1) - dsign(box_length(3),zheight(w,1))
-!!!!    if (dabs(zheight(w,2)) .gt. (0.5d0*box_length(3))) zheight(w,2) = zheight(w,2) - dsign(box_length(3),zheight(w,2))
-!!!    do while (dabs(zheight(w,1)) .gt. (0.5d0*box_length(3)))
-!!!     zheight(w,1) = zheight(w,1) - dsign(box_length(3),zheight(w,1))
-!!!    enddo
-!!!    do while (dabs(zheight(w,2)) .gt. (0.5d0*box_length(3)))
-!!!     zheight(w,2) = zheight(w,2) - dsign(box_length(3),zheight(w,2))
-!!!    enddo
-!!!
-!!!! Find the unit vector normal to the surface at the (x,y) position of each atom.
-!!!
-!!!    if (zheight(w,1) .lt. zheight(w,2)) then
-!!!     grad_interp = -1.d0 * grad_interp1
-!!!    else if (zheight(w,2) .lt. zheight(w,1)) then
-!!!     grad_interp = grad_interp2
-!!!    else
-!!!     write(*,*) 'Molecule is equidistant from the two surfaces -- more programming is needed!'
-!!!     stop
-!!!    endif
-!!!
-!!!    end subroutine
+     return
+end subroutine
