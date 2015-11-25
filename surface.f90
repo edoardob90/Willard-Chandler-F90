@@ -54,12 +54,10 @@
      allocate( k_x(L-1), k_y(M-1) )
     
 
-! Initialize to zero the reference of the profile function. This MUST BE DONE just one time here.
-!     h_xy_t0 = 0.0d0
 
 ! Loop through each frame:
 
-     ntimes = 0 ! Number of times the whole computation is executed. To compute the time average
+     ntimes = 0 ! Number of times the FT is computed (for the time average)
      ck_averaged = 0.0d0 ! Averages of the coefficients, set initially to zero
 
      frame_loop: do frame=1,num_frames
@@ -146,24 +144,26 @@
                                ck_averaged(:,:) = ck_averaged(:,:) + ck_xy_r(:,:)
                                
 
-                         end if fft_compute
+                               ntimes = ntimes + 1
                          
-                         ntimes = ntimes + 1
+                           end if fft_compute
                          
                      end if frame_skip
 
      end do frame_loop
 
      ! Compute the average of the Fourier coefficients and write output
-     ck_averaged = ck_averaged / ntimes
+     if (compute_fft) then
+         ck_averaged = ck_averaged / ntimes
 
-     write(output_unit,*) "Writing averaged Fourier coefficients ..."
+         write(output_unit,*) "Writing averaged Fourier coefficients ..."
 
-     do i=1,(L-1)/2+1
-        do j=1,(M-1)/2+1
-           write(f_fft,'(2f10.5,x,e15.7)') k_x(i), k_y(j), ck_averaged(i,j)
-        end do
-     end do
+         do i=1,(L-1)/2+1
+            do j=1,(M-1)/2+1
+               write(f_fft,'(2f10.5,x,e15.7)') k_x(i), k_y(j), ck_averaged(i,j)
+            end do
+         end do
+     end if
 
      write(output_unit,*) 'Processing complete.'
 
