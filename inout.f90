@@ -38,6 +38,8 @@
     end subroutine start_io
 ! -----------------------------------------------------------------------------------------------------------------------------
     subroutine swap_coord(vector, i, j)
+
+        use kinds, only: DP
         
         implicit none
 
