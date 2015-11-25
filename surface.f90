@@ -160,8 +160,8 @@
      write(output_unit,*) "Writing averaged Fourier coefficients ..."
 
      do i=1,(L-1)/2+1
-        do j=1,M-1
-           write(f_fft,'(3f20.10)') k_x(i), k_y(j), ck_averaged(i,j)
+        do j=1,(M-1)/2+1
+           write(f_fft,'(2f10.5,x,e15.7)') k_x(i), k_y(j), ck_averaged(i,j)
         end do
      end do
 

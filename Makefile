@@ -1,8 +1,8 @@
 .PHONY: clean link rm-link
 
 FC=ifort
-#FFLAGS=-fast
-FFLAGS=-O0 -g -traceback -fpe0
+FFLAGS=-fast -fpe0 -ftrapuv
+#FFLAGS=-O0 -g -traceback -fpe0 -ftrapuv
 LIBS=-lfftw3 -lm
 LDFLAGS=
 
