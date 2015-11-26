@@ -283,8 +283,11 @@
                 
                     write(output_unit,'(a,/)') "Surface.x is in batch mode... reading from standard input"
                     
-                    read(input_unit,*) dname, normal_is, file_water, file_surface, stride, box_length(:), opref(:), xi, fft_answer, file_fft
-                    write(output_unit, '(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i10,a,/,3x,a,3f10.5,/,3x,a,2f10.5,/,3x,a,f5.3,a,/,3x,2a,/,3x,2a,/)') & 
+                    read(input_unit,*) dname, normal_is, file_water, file_surface, stride, box_length(:), opref(:), xi, grid_spacing, fft_answer, file_fft
+
+20 format(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i10,a,/,3x,a,3f10.5,/,3x,a,2f10.5,/,3x,a,f5.3,a,f5.3,a,/,3x,2a,/,3x,2a,/)
+
+                    write(output_unit,20) & 
                         & "Willard-Chandler surface will be computed according to the following input:", &
                         & "Input trajectory: ", to_upper(trim(dname)), &
                         & "Interface normal along ", to_upper(normal_is), " axis", &
@@ -292,7 +295,7 @@
                         & "Processing every ", stride, " frames", &
                         & "Simulation box size: ", box_length(:), &
                         & "Order parameter references: ", opref(:), &
-                        & "Variance of the Gaussian functions: ", xi, " (in appropriate length units)", &
+                        & "Variance of the Gaussian functions is ", xi, " and grid spacing ", grid_spacing, " (in appropriate distance units)", &
                         & "Computing FT of the interface height profile: ", to_upper(fft_answer), &
                         & "REAL Fourier coefficients will be written to: ", to_upper(trim(file_fft))
 

@@ -33,6 +33,8 @@
         num_frames = num_frames / (num_atom + 2)
         read(dat,*) ! Throw away the second line of frame 1 containing box size (the code already knows it from input)
 
+        rewind(dat)
+
         return
         
     end subroutine start_io
@@ -95,21 +97,19 @@
 10 format(3f10.5)
 11 format(a3,x,f12.5,x,f12.5,x,f12.5)
       
+! Write header to output files
       write(f_wat,*) num_atom
-      write(f_wat,10) box_length(:)
-      
+
+      ! TOTAL number of suface points: (x,y)grid points + (x,y)points in-between
       write(f_sur,'(i6)') coord(1) * coord(2) + (coord(1)-1) * (coord(2)-1)
-      write(f_sur,10) box_length(:)
       
-      !write(f_dist,*) num_atom
-      !write(f_dist,10) box_length(:)
 
 ! Read-in frame from input file:
 
       if (frame > 1) then
           read(dat,*)
           ! Update the box dimensions if we are in NPT ensemble
-          read(dat,*) box_length(:)
+          read(dat,*,iostat=i) box_length(:)
 
           ! Swap box dimensions if the interface is NOT perp. to Z
           if (.not. normal_along_z) then
@@ -120,6 +120,10 @@
              end if
           end if
       end if
+
+! Write updated box dimensions to output files
+      write(f_sur,10) box_length
+      write(f_wat,10) box_length
 
       atom_loop: do x=1,num_atom
 ! Read from trajectory

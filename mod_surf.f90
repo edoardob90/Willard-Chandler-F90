@@ -10,9 +10,8 @@ module mod_surf
 ! Define global variables
 ! =========================
 ! Constants and input parameters:
-    real(DP) :: xi,ximin2,ximin4,ninxisq,phi3xi,const,prefac,xscratch,yscratch,zscratch
+    real(DP) :: xi, ximin2, ximin4, ninxisq, phi3xi, const, prefac, xscratch, yscratch, zscratch, grid_spacing
     real(DP), dimension(3) :: box_length, gspacing
-    real(DP), parameter :: grid_spacing=0.5d0
     integer :: coord(3)
 
 ! Surface variables:
@@ -73,11 +72,9 @@ module mod_surf
 
     implicit none
 
-     !xi = 2.4d0
      ximin2 = 1.d0/xi**2.d0
      ximin4 = 1.d0/xi**4.d0
      ninxisq = 9.d0 * xi**2
-     const = 0.016d0
      prefac = ((2 * pi * xi**2)**(-1.5d0))
      phi3xi = ( prefac * dexp(-4.5d0))
 
@@ -90,16 +87,16 @@ module mod_surf
 
      real(DP) :: rsq
 
-     if (rsq .ge. ninxisq) then
+     if (rsq > ninxisq) then
       phi = 0.d0
       return
      endif
 
-     phi = ( prefac * dexp(-0.5d0 * rsq / xi**2 )) - phi3xi
+     phi = ( prefac * EXP(-0.5d0 * rsq / xi**2 )) !- phi3xi
 
      return
 
-     end function
+     end function phi
     
      
 ! ------------------------------------------------------------------------------------------------------------------------

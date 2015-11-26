@@ -150,8 +150,6 @@
 
 ! Calculate grid
 
-     !read(input,*) (box_length(x),x=1,3,1)
-
      coord = 0
      do i=1,3
       coord(i) = 1 + nint(box_length(i) / grid_spacing)
