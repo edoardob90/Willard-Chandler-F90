@@ -31,6 +31,7 @@
     ! Read in number of atoms and use it to calculate number of frames:
         read(dat,*) num_atom
         num_frames = num_frames / (num_atom + 2)
+        !write(error_unit,*) num_frames
         read(dat,*) ! Throw away the second line of frame 1 containing box size (the code already knows it from input)
 
         rewind(dat)
@@ -56,13 +57,13 @@
         return
     end subroutine swap_coord
 ! -----------------------------------------------------------------------------------------------------------------------------
-    subroutine skip_frame(f)
+    subroutine skip_frame()
 
         use mod_surf
 
         implicit none
 
-        integer :: i, f
+        integer :: i
 
         !write(6,*) "Skipping frame ", f
         !flush(6)
@@ -109,7 +110,7 @@
       if (frame > 1) then
           read(dat,*)
           ! Update the box dimensions if we are in NPT ensemble
-          read(dat,*,iostat=i) box_length(:)
+          call update_box()
 
           ! Swap box dimensions if the interface is NOT perp. to Z
           if (.not. normal_along_z) then
@@ -165,3 +166,20 @@
       return
 
     end subroutine
+
+
+    subroutine update_box()
+
+        use mod_surf
+        
+        implicit none
+
+        integer :: ios, j
+
+        ! Update the box, if it's changed because we're in an NPT ensemble
+        box_length = 0.0d0
+        read(dat,*,iostat=ios) (box_length(j), j=1,3)
+
+        return
+
+    end subroutine update_box

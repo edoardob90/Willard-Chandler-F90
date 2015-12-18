@@ -33,7 +33,8 @@ module mod_surf
 ! Input and output:
     character(len=100) :: dname, file_water, file_surface, file_dist, input, input1, file_fft
     integer :: dat, f_wat, f_sur, f_dist, f_fft, stride
-    real(DP) :: opref(2) ! the two reference values for the order parameter
+    !real(DP) :: opref(2) ! the two reference values for the order parameter
+    real(DP) :: contour
     logical :: normal_along_z, pdb
     character(len=1) :: normal_is
     character(len=*), parameter :: pdbformat="('ATOM',i7,1x,a2,6x,a2,i4,4x,3f8.3,2f6.2,10x,a2)"
@@ -107,7 +108,7 @@ module mod_surf
 
     real(DP) :: x,y,z
 
-    density_field_const = cal_op_field(x,y,z) - const
+    density_field_const = cal_op_field(x,y,z) - contour
 
     return
 

@@ -65,7 +65,7 @@
          ! Check if we need to process every frame or not
          frame_skip: if ( mod(frame,stride) /= 0) then
              
-                          call skip_frame(frame)
+                          call skip_frame()
                           cycle frame_loop
          
                      else
@@ -80,8 +80,9 @@
                          
                          ! Find the constant, const, and find the surface in terms of (x,y) grid points:
                          
+                         !!! Value of the CONST already set by CONTOUR
                          ! const should be: opref(liquid)+opref(solid)/2
-                               const = SUM(opref)/2
+                         !      const = SUM(opref)/2
                                
                                call find_surface()
                          
@@ -103,7 +104,7 @@
 
                          fft_compute: if (compute_fft) then
 
-                               plan = fftw_plan_dft_r2c_2d(M-1, L-1, h_xy, ck_xy, FFTW_ESTIMATE)
+                               plan = fftw_plan_dft_r2c_2d(M-1, L-1, h_xy, ck_xy, FFTW_MEASURE)
 
                                ! Wave vectors of the Fourier sum
                                ! In general: k_(x,y) = (i,j) * 2*pi/L_(x,y)
@@ -114,7 +115,7 @@
                                   k_y(j) = (j-1) * 2*pi/box_length(2)
                                end do
 
-                               ! Profile height of the surface at current frame MINUS the reference computed at the beginning
+                               ! Profile height of the surface at current frame
                                forall (i=1:L-1, j=1:M-1)
                                    h_xy(i,j) = surf2(i,j,1,3) 
                                end forall
@@ -283,9 +284,9 @@
                 
                     write(output_unit,'(a,/)') "Surface.x is in batch mode... reading from standard input"
                     
-                    read(input_unit,*) dname, normal_is, file_water, file_surface, stride, box_length(:), opref(:), xi, grid_spacing, fft_answer, file_fft
+                    read(input_unit,*) dname, normal_is, file_water, file_surface, stride, box_length(:), contour, xi, grid_spacing, fft_answer, file_fft
 
-20 format(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i10,a,/,3x,a,3f10.5,/,3x,a,2f10.5,/,3x,a,f5.3,a,f5.3,a,/,3x,2a,/,3x,2a,/)
+20 format(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i10,a,/,3x,a,3f10.5,/,3x,a,f10.5,/,3x,a,f5.3,/,3x,a,f5.3,a,/,3x,2a,/,3x,2a,/)
 
                     write(output_unit,20) & 
                         & "Willard-Chandler surface will be computed according to the following input:", &
@@ -294,8 +295,9 @@
                         & "Output files: ", to_upper(trim(file_water)), " and ", to_upper(trim(file_surface)), &
                         & "Processing every ", stride, " frames", &
                         & "Simulation box size: ", box_length(:), &
-                        & "Order parameter references: ", opref(:), &
-                        & "Variance of the Gaussian functions is ", xi, " and grid spacing ", grid_spacing, " (in appropriate distance units)", &
+                        & "Value of the CONTOUR where to draw the surface: ", contour, &
+                        & "Bandwidth of the Gaussian kernel: ", xi, & 
+                        & "Grid spacing: ", grid_spacing, " (in appropriate distance units)", &
                         & "Computing FT of the interface height profile: ", to_upper(fft_answer), &
                         & "REAL Fourier coefficients will be written to: ", to_upper(trim(file_fft))
 
