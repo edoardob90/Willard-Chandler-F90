@@ -181,16 +181,15 @@
 
         subroutine print_help()
           
-          write(error_unit,'(a)') 'Usage: Surface.x [-b] [-i] <ARGUMENTS>'
-          write(error_unit,'(a)') ''
-          write(error_unit,'(a)') 'Surface.x modes:'
-          write(error_unit,'(a)') ''
+          write(error_unit,'(a)') 'Usage: Surface.x [-b < INPUT] [-i] [-h]'
+          write(error_unit,*)
+          write(error_unit,'(a)') 'Surface.x switches:'
+          write(error_unit,*)
           write(error_unit,'(a)') '  -i, --interactive        Ask for input interactively'
-          write(error_unit,'(a)') ''
-          write(error_unit,'(a)') '  -b, --batch        Read from standard input. The order MUST be the following:'
-          write(error_unit,'(a)') '    <input_traj> <interface normal (x,y,z)> <wrapped_traj> <surface_file> &
-                               & <stride> <box: lx ly lz> <op ref values: 1 2> <Gaussian xi> &
-                               <Compute FT [yes/no]>'
+          write(error_unit,*)
+          write(error_unit,'(a)') '  -b, --batch              Read from standard input. Type -h to know what arguments are accepted'
+          write(error_unit,*)
+          write(error_unit,'(a)') '  -h, --help               Detailed description of arguments and their order'
 
           return
         end subroutine print_help
@@ -260,10 +259,13 @@
                     read(input_unit,*) box_length(:)
                     
                     write(output_unit,'(3x,a)', advance='no') "Order parameter reference values (op1 op2) >> "
-                    read(input_unit,*) opref(:)
+                    read(input_unit,*) contour
                     
-                    write(output_unit,'(3x,a)', advance='no') "Gaussian variance [xi] >> "
+                    write(output_unit,'(3x,a)', advance='no') "Bandwidth of Gaussian kernel [xi] >> "
                     read(input_unit,*) xi
+                    
+                    write(output_unit,'(3x,a)', advance='no') "Grid spacing >> "
+                    read(input_unit,*) grid_spacing
                 
                     write(output_unit,'(3x,a)', advance='no') "Compute FT of height profile? [Y/n] >> "
                     read(input_unit,'(a)') fft_answer
@@ -317,6 +319,10 @@
                     end if
 
                 
+                else if (narg == 1 .and. (arg == '-h' .or. arg == '--help')) then
+                    call print_arguments()
+                    stop
+                
                 else
                     write(error_unit,*) "Wrong number of arguments or option not recognized. Stop."
                     call print_help()
@@ -333,8 +339,6 @@
                             call swap_coord(box_length, 2, 3)
                         end if
                     end if
-
-
             return
             
         end subroutine parse_arguments
@@ -358,6 +362,29 @@
              end do
         
         end function to_upper
+
+
+        subroutine print_arguments()
+
+            implicit none
+
+            write(error_unit, '(a)') "Surface.x detailed list of arguments for batch mode ..."
+            write(error_unit, '(a)') "ARGUMENTS. Their order MUST be the following: ", &
+                        & "   -> Input trajectory filename (XYZ file)", &
+                        & "   -> Interface normal along [x/y/z] axis", &
+                        & "   -> Output files: wrapped trajectory, surface plot", &
+                        & "   -> Stride of processing input trajectory", &
+                        & "   -> Simulation box size (3 numbers, SPACE separated)", &
+                        & "   -> Value of the CONTOUR where to draw the surface", &
+                        & "   -> Bandwidth of the Gaussian kernel", & 
+                        & "   -> Spacing of the regular grid", &
+                        & "   -> Compute the FT of the surface profile? [Y/N]", &
+                        & "   -> Output file where to write time-averaged, real Fourier coefficients (unnormalized)"
+
+
+            return
+
+        end subroutine print_arguments
 
     
 end program surface
