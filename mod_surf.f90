@@ -1,7 +1,8 @@
 module mod_surf
     use, intrinsic :: iso_fortran_env
-    use kinds, only: DP
-    use constants, only: pi
+    !use kinds, only: DP
+    !use constants, only: pi
+    use nrtype, only: SP, DP, LGT, PI_D
     use fftw3
     implicit none
     save
@@ -35,7 +36,7 @@ module mod_surf
     integer :: dat, f_wat, f_sur, f_dist, f_fft, stride
     !real(DP) :: opref(2) ! the two reference values for the order parameter
     real(DP) :: contour
-    logical :: normal_along_z, pdb
+    logical(LGT) :: normal_along_z, pdb
     character(len=1) :: normal_is
     character(len=*), parameter :: pdbformat="('ATOM',i7,1x,a2,6x,a2,i4,4x,3f8.3,2f6.2,10x,a2)"
 
@@ -49,7 +50,7 @@ module mod_surf
     type(Atom), allocatable :: atoms(:)
 
 ! Surface variables for Fourier Transform
-   logical :: compute_fft
+   logical(LGT) :: compute_fft
    character(len=3) :: fft_answer
 
    ! Arrays related to the FT of the interface profile:
@@ -76,7 +77,7 @@ module mod_surf
      ximin2 = 1.d0/xi**2.d0
      ximin4 = 1.d0/xi**4.d0
      ninxisq = 9.d0 * xi**2
-     prefac = ((2 * pi * xi**2)**(-1.5d0))
+     prefac = ((2 * PI_D * xi**2)**(-1.5d0))
      phi3xi = ( prefac * dexp(-4.5d0))
 
      end subroutine

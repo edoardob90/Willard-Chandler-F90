@@ -9,7 +9,7 @@
     implicit none
 
     integer :: u,v,w,x,y,xmin,xmax,ymin,ymax
-    logical :: allfound,found(coord(1),coord(2),2)
+    plogical :: allfound,found(coord(1),coord(2),2),ok
     real(DP) :: lowbound,upbound
 
 ! Firstly, take the centre of the box (box_length(1)/2,box_length(2)/2,0), and use Brent's algorithm
@@ -35,8 +35,16 @@
       
       !print *, "Line 31, calculations.f90"
       
-      surf(x,y,1,3) = brent( 0.d0, box_length(3)*0.5d0, 1.d-6, surf(x,y,1,1), surf(x,y,1,2), density_field_const )
-      surf(x,y,2,3) = brent(box_length(3)*0.5d0, box_length(3), 1.d-9, surf(x,y,2,1), surf(x,y,2,2), density_field_const)
+      !surf(x,y,1,3) = brent( 0.d0, box_length(3)*0.5d0, 1.d-6, surf(x,y,1,1), surf(x,y,1,2), density_field_const )
+      !surf(x,y,2,3) = brent(box_length(3)*0.5d0, box_length(3), 1.d-9, surf(x,y,2,1), surf(x,y,2,2), density_field_const)
+      
+      surf(x,y,1,3) = zbrent(func=density_field_const, z1=0.0d0, z2=box_length(3)*0.5d0, &
+                            & x=surf(x,y,1,1), y=surf(x,y,1,2), &
+                            & tol=1.0d-6)
+      surf(x,y,2,3) = zbrent(func=density_field_const, z1=box_length(3)*0.5d0, z2=box_length(3), &
+                            & x=surf(x,y,2,1), y=surf(x,y,2,2), &
+                            & tol=1.0d-6)
+      
       found(x,y,:) = .true.
       
       !print *, "Line 37, calculations.f90"
@@ -71,10 +79,18 @@
                   enddo
                   lowbound = lowbound - gspacing(3)
                   upbound = upbound + gspacing(3)
-                  call bracket(surf(u,v,w,1),surf(u,v,w,2),lowbound,upbound,density_field_const,1.2d0)
+                  
+                  !call bracket(surf(u,v,w,1),surf(u,v,w,2),lowbound,upbound,density_field_const,1.2d0)
+
+                  call zbrac(func=density_field_const, z1=lowbound, z2=upbound, &
+                            & x=surf(u,v,w,1), y=surf(u,v,w,2), factor=1.2d0, succes=ok)
+                  if (.not. ok) call nrerror("Root bracketing failed. Consider changing NTRY parameter")
 
                   ! Use Brent's algorithm to find the z-value:
-                  surf(u,v,w,3) = brent(lowbound,upbound,1.d-9,surf(u,v,w,1),surf(u,v,w,2),density_field_const)
+                  !surf(u,v,w,3) = brent(lowbound,upbound,1.d-9,surf(u,v,w,1),surf(u,v,w,2),density_field_const)
+                  surf(u,v,w,3) = zbrent(func=density_field_const, z1=lowbound, z2=upbound, &
+                                        & x=surf(u,v,w,1), y=surf(u,v,w,2), &
+                                        & tol=1.0d-9)
                   found(u,v,w) = .true.
 
               endif

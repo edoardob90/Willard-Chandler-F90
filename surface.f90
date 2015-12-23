@@ -286,7 +286,8 @@
                 
                     write(output_unit,'(a,/)') "Surface.x is in batch mode... reading from standard input"
                     
-                    read(input_unit,*) dname, normal_is, file_water, file_surface, stride, box_length(:), contour, xi, grid_spacing, fft_answer, file_fft
+                    read(input_unit,*) dname, normal_is, file_water, file_surface, stride, box_length(:), &
+                                      & contour, xi, grid_spacing, fft_answer, file_fft
 
 20 format(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i10,a,/,3x,a,3f10.5,/,3x,a,f10.5,/,3x,a,f5.3,/,3x,a,f5.3,a,/,3x,2a,/,3x,2a,/)
 

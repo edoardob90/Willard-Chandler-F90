@@ -1,8 +1,7 @@
-    module mod_interp
+module mod_interp
     
-    !use, intrinsic :: iso_fortran_env
-    !use kinds, only: DP
-    use nrutil
+    use nrtype
+    use nrutil, only: nrerror
     
     implicit none
     
@@ -240,4 +239,138 @@
     read(*,*)
     end subroutine
 ! ------------------------------------------------------------------------------------------------------------------------
-    end module
+
+    SUBROUTINE zbrac(func,z1,z2,x,y,factor,succes) 
+        IMPLICIT NONE
+        REAL(DP), INTENT(INOUT) :: z1,z2,x,y
+        REAL(DP), INTENT(IN) :: FACTOR
+        LOGICAL(LGT), INTENT(OUT) :: succes
+        INTERFACE
+            FUNCTION func(x,y,z)
+            USE nrtype
+            IMPLICIT NONE
+            REAL(DP), INTENT(IN) :: x,y,z
+            REAL(DP) :: func
+            END FUNCTION func
+        END INTERFACE
+         
+        INTEGER(I4B), PARAMETER :: NTRY=50
+        !REAL(SP), PARAMETER :: FACTOR=1.6_sp
+         
+         !Given a function func and an initial guessed range x1 to x2, the routine
+         !expands the range geometrically until a root is bracketed by the returned
+         !values x1 and x2 (in which case succes returns as .true.) or until the range
+         !becomes unacceptably large (in which case succes returns as .false.).
+         
+         INTEGER(I4B) :: j
+         REAL(DP) :: f1,f2
+         if (x1 == x2) call nrerror("zbrac: you have to guess an initial range")
+         f1=func(x,y,z1)
+         f2=func(x,y,z2)
+         succes=.true.
+         do j=1,NTRY
+            if ((f1 > 0.0 .and. f2 < 0.0) .or. (f1 < 0.0 .and. f2 > 0.0)) RETURN
+            if (abs(f1) < abs(f2)) then 
+                x1=x1+FACTOR*(x1-x2) f1=func(x1)
+            else 
+                x2=x2+FACTOR*(x2-x1) f2=func(x2)
+            end if 
+         end do
+         succes=.false.
+ 
+    END SUBROUTINE zbrac
+
+
+    FUNCTION zbrent(func,z1,z2,x,y,tol)
+        USE nrtype
+        USE nrutil, ONLY : nrerror 
+        IMPLICIT NONE
+        REAL(DP), INTENT(IN) :: z1,z2,tol,x,y
+        REAL(DP) :: zbrent
+        INTERFACE
+            FUNCTION func(x,y,z)
+            USE nrtype
+            IMPLICIT NONE
+            REAL(DP), INTENT(IN) :: x,y,z
+            REAL(DP) :: func
+            END FUNCTION func
+        END INTERFACE
+    
+        INTEGER(I4B), PARAMETER :: ITMAX=100
+        REAL(DP), PARAMETER :: EPS=epsilon(z1)
+        
+        !Using Brent’s method, find the root of a function func known to lie between x1 and x2.
+        !The root, returned as zbrent, will be refined until its accuracy is tol.
+        !Parameters: Maximum allowed number of iterations, and machine floating-point precision.
+        
+        INTEGER(I4B) :: iter
+        REAL(DP) :: a,b,c,d,e,fa,fb,fc,p,q,r,s,tol1,xm
+        
+        a=z1
+        b=z2
+        fa=func(x,y,a)
+        fb=func(x,y,b)
+    
+        if ((fa > 0.0 .and. fb > 0.0) .or. (fa < 0.0 .and. fb < 0.0)) call nrerror("root must be bracketed for zbrent")
+        c=b
+        fc=fb
+        do iter=1,ITMAX
+            if ((fb > 0.0 .and. fc > 0.0) .or. (fb < 0.0 .and. fc < 0.0)) then
+                c=a ! Rename a, b, c and adjust bounding interval d.
+                fc=fa
+                d=b-a
+                e=d
+            end if
+            if (abs(fc) < abs(fb)) then
+                a=b
+                b=c
+                c=a
+                fa=fb
+                fb=fc
+                fc=fa
+            end if
+            tol1=2.0_dp*EPS*abs(b)+0.5_dp*tol  ! Convergence check
+            xm=0.5_dp*(c-b)
+            if (abs(xm) <= tol1 .or. fb == 0.0) then
+                zbrent=b
+                RETURN
+            end if
+            
+            if (abs(e) >= tol1 .and. abs(fa) > abs(fb)) then
+                s=fb/fa ! Attempt inverse quadratic interpolation.
+                if (a == c) then
+                    p=2.0_dp*xm*s
+                    q=1.0_dp-s
+                else
+                    q=fa/fc
+                    r=fb/fc
+                    p=s*(2.0_dp*xm*q*(q-r)-(b-a)*(r-1.0_dp))
+                    q=(q-1.0_dp)*(r-1.0_dp)*(s-1.0_dp)
+                end if
+            
+                if (p > 0.0) q=-q ! Check whether in bounds.
+                p=abs(p)
+                if (2.0_dp*p < min(3.0_dp*xm*q-abs(tol1*q),abs(e*q))) then
+                    e=d ! Accept interpolation.
+                    d=p/q
+                else
+                    d=xm ! Interpolation failed, use bisection
+                    e=d
+                end if
+            else         ! Bounds decreasing too slowly, use bisection
+                d=xm
+                e=d
+            end if
+            a=b          ! Move last best guess to 'a'
+            fa=fb
+            b=b+merge(d,sign(tol1,xm), abs(d) > tol1 ) ! Evaluate new trial root
+            fb=func(b)
+        end do
+    
+        call nrerror("zbrent: exceeded maximum iterations")
+    
+        zbrent=b
+    
+    END FUNCTION zbrent
+
+end module mod_interp
