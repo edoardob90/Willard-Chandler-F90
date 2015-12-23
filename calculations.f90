@@ -9,7 +9,7 @@
     implicit none
 
     integer :: u,v,w,x,y,xmin,xmax,ymin,ymax
-    plogical :: allfound,found(coord(1),coord(2),2),ok
+    logical :: allfound,found(coord(1),coord(2),2),ok
     real(DP) :: lowbound,upbound
 
 ! Firstly, take the centre of the box (box_length(1)/2,box_length(2)/2,0), and use Brent's algorithm

@@ -1,8 +1,6 @@
 module mod_surf
     use, intrinsic :: iso_fortran_env
-    !use kinds, only: DP
-    !use constants, only: pi
-    use nrtype, only: SP, DP, LGT, PI_D
+    use nrtype
     use fftw3
     implicit none
     save
@@ -104,14 +102,15 @@ module mod_surf
 ! ------------------------------------------------------------------------------------------------------------------------
      
      
-    real(DP) function density_field_const(x,y,z)
-    implicit none
+    function density_field_const(x,y,z)
+        
+        implicit none
+        real(DP), intent(in) :: x,y,z
+        real(DP) :: density_field_const
 
-    real(DP) :: x,y,z
+        density_field_const = cal_op_field(x,y,z) - contour
 
-    density_field_const = cal_op_field(x,y,z) - contour
-
-    return
+        return
 
     end function
 

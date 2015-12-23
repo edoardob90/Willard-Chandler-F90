@@ -1,7 +1,7 @@
 module mod_interp
     
     use nrtype
-    use nrutil, only: nrerror
+    use nrutil
     
     implicit none
     
@@ -264,16 +264,18 @@ module mod_interp
          
          INTEGER(I4B) :: j
          REAL(DP) :: f1,f2
-         if (x1 == x2) call nrerror("zbrac: you have to guess an initial range")
+         if (z1 == z2) call nrerror("zbrac: you have to guess an initial range")
          f1=func(x,y,z1)
          f2=func(x,y,z2)
          succes=.true.
          do j=1,NTRY
             if ((f1 > 0.0 .and. f2 < 0.0) .or. (f1 < 0.0 .and. f2 > 0.0)) RETURN
             if (abs(f1) < abs(f2)) then 
-                x1=x1+FACTOR*(x1-x2) f1=func(x1)
+                z1=z1+FACTOR*(z1-z2)
+                f1=func(x,y,z1)
             else 
-                x2=x2+FACTOR*(x2-x1) f2=func(x2)
+                z2=z2+FACTOR*(z2-z1)
+                f2=func(x,y,z2)
             end if 
          end do
          succes=.false.
@@ -364,7 +366,7 @@ module mod_interp
             a=b          ! Move last best guess to 'a'
             fa=fb
             b=b+merge(d,sign(tol1,xm), abs(d) > tol1 ) ! Evaluate new trial root
-            fb=func(b)
+            fb=func(x,y,b)
         end do
     
         call nrerror("zbrent: exceeded maximum iterations")
