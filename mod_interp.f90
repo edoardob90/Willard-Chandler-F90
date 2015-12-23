@@ -1,6 +1,8 @@
     module mod_interp
     
-    use kinds, only: DP
+    !use, intrinsic :: iso_fortran_env
+    !use kinds, only: DP
+    use nrutil
     
     implicit none
     
@@ -142,7 +144,7 @@
     funca = fxyz(x,y,za)
     funcb = fxyz(x,y,zb)
     if (funca * funcb .gt. 0.d0) then
-     write(*,*) 'Root is not bracketed!'
+     write(error_unit,*) 'Root is not bracketed!'
      stop
     endif
     zc = zb
@@ -202,7 +204,7 @@
     funcb = fxyz(x,y,zb)
     enddo
 
-    write(*,*) 'Brent algorithm has exceeded maximum number of iterations!'
+    write(error_unit,*) 'Brent algorithm has exceeded maximum number of iterations!'
     read(*,*)
     brent = zb
     return
@@ -213,13 +215,13 @@
     implicit none
 
     integer i
-    real(8) x,y,z1,z2,factor,func1,func2,fxyz
+    real(DP) x,y,z1,z2,factor,func1,func2,fxyz
     integer numtry
     parameter(numtry = 20)
 
 ! Expand the range (z1,z2) until a root of density_field is bracketed by them.
     if (z1 .eq. z2) then
-     write(*,*) 'Bracketing algorithm requires a nonzero initial range'
+     write(error_unit,*) 'Bracketing algorithm requires a nonzero initial range'
      stop
     endif
     func1 = fxyz(x,y,z1)
@@ -234,7 +236,7 @@
       func2 = fxyz(x,y,z2)
      endif
     enddo
-    write(*,*) 'Root cannot be bracketed - consider changing numtry parameter.'
+    write(error_unit,*) 'Root cannot be bracketed - consider changing numtry parameter.'
     read(*,*)
     end subroutine
 ! ------------------------------------------------------------------------------------------------------------------------
