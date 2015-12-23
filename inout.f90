@@ -42,7 +42,7 @@
 ! -----------------------------------------------------------------------------------------------------------------------------
     subroutine swap_coord(vector, i, j)
 
-        use kinds, only: DP
+        use nrtype, only: DP
         
         implicit none
 
