@@ -409,10 +409,22 @@ CONTAINS
     end if
     END FUNCTION assert_eqn
 !BL
-    SUBROUTINE nrerror(string)
-    CHARACTER(LEN=*), INTENT(IN) :: string
-    write (error_unit,*) 'nrerror: ',string
-    STOP 'program terminated by nrerror'
+    SUBROUTINE nrerror(string, critical)
+        IMPLICIT NONE
+        CHARACTER(LEN=*), INTENT(IN) :: string
+        LOGICAL, OPTIONAL, INTENT(IN) :: critical
+        
+        if (present(critical)) then
+            if (critical) then
+                write(error_unit,*) "CRITICAL nrerror: ", string
+                stop "program terminated by nrerror"
+            else
+                write (error_unit,*) "WARNING nrerror: ", string
+            end if
+        else
+            write (error_unit,*) "nrerror: ", string
+        end if
+    
     END SUBROUTINE nrerror
 !BL
     FUNCTION arth_r(first,increment,n)

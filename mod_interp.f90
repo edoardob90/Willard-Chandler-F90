@@ -264,7 +264,7 @@ module mod_interp
          
          INTEGER(I4B) :: j
          REAL(DP) :: f1,f2
-         if (z1 == z2) call nrerror("zbrac: you have to guess an initial range")
+         if (z1 == z2) call nrerror("zbrac: you have to guess an initial range",.true.)
          f1=func(x,y,z1)
          f2=func(x,y,z2)
          succes=.true.
@@ -313,7 +313,7 @@ module mod_interp
         fa=func(x,y,a)
         fb=func(x,y,b)
     
-        if ((fa > 0.0 .and. fb > 0.0) .or. (fa < 0.0 .and. fb < 0.0)) call nrerror("root must be bracketed for zbrent")
+        if ((fa > 0.0 .and. fb > 0.0) .or. (fa < 0.0 .and. fb < 0.0)) call nrerror("root must be bracketed for zbrent",.true.)
         c=b
         fc=fb
         do iter=1,ITMAX
@@ -369,7 +369,7 @@ module mod_interp
             fb=func(x,y,b)
         end do
     
-        call nrerror("zbrent: exceeded maximum iterations")
+        call nrerror("zbrent: exceeded maximum iterations! Found root not converged.",.false.)
     
         zbrent=b
     

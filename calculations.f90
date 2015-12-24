@@ -80,14 +80,16 @@
                   lowbound = lowbound - gspacing(3)
                   upbound = upbound + gspacing(3)
                   
-                  !call bracket(surf(u,v,w,1),surf(u,v,w,2),lowbound,upbound,density_field_const,1.2d0)
+                        !call bracket(surf(u,v,w,1),surf(u,v,w,2),lowbound,upbound,density_field_const,1.2d0)
 
                   call zbrac(func=density_field_const, z1=lowbound, z2=upbound, &
                             & x=surf(u,v,w,1), y=surf(u,v,w,2), factor=1.2d0, succes=ok)
-                  if (.not. ok) call nrerror("Root bracketing failed. Consider changing NTRY parameter")
+                  if (.not. ok) call nrerror("Root bracketing failed. Consider changing NTRY parameter",critical=.true.)
 
                   ! Use Brent's algorithm to find the z-value:
-                  !surf(u,v,w,3) = brent(lowbound,upbound,1.d-9,surf(u,v,w,1),surf(u,v,w,2),density_field_const)
+                  
+                        !surf(u,v,w,3) = brent(lowbound,upbound,1.d-9,surf(u,v,w,1),surf(u,v,w,2),density_field_const)
+                  
                   surf(u,v,w,3) = zbrent(func=density_field_const, z1=lowbound, z2=upbound, &
                                         & x=surf(u,v,w,1), y=surf(u,v,w,2), &
                                         & tol=1.0d-9)
