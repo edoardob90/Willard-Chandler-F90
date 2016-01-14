@@ -6,7 +6,7 @@
     implicit none
 ! This program calculates the Chandler surface for liquid water from an inputted XYZ file.
 
-     integer :: w, frame, i, j, ntimes, L, M
+    integer :: w, frame, i, j, ntimes, L, M
 
 ! For now, unit cell is orthorhombic, so that the matrix is unity:
 
@@ -60,7 +60,9 @@
      ntimes = 0 ! Number of times the FT is computed (for the time average)
      ck_averaged = 0.0d0 ! Averages of the coefficients, set initially to zero
 
-     frame_loop: do frame=1,num_frames
+     if (fframe == -1) fframe=num_frames
+
+     frame_loop: do frame=iframe, fframe
      
          ! Check if we need to process every frame or not
          frame_skip: if ( mod(frame,stride) /= 0) then
@@ -103,11 +105,19 @@
                          !  z = height of the surface at the corresponding grid point
 
                          fft_compute: if (compute_fft) then
-
+#ifdef _VERBOSE_FFT
+    write(error_unit,*) "DEBUG ON, VERBOSE OUT: creating plan for FFT. Arrays has the following dimensions:"
+    write(error_unit,*) "h_xy: (", SHAPE(h_xy),")", "   -> surface profile matrix"
+    write(error_unit,*) "ck_xy: (", SHAPE(ck_xy),")", "   -> matrix of complex Fourier coefficients"
+    write(error_unit,*) "ck_xy_r: (", SHAPE(ck_xy_r),")", "   -> matrix of real Fourier coefficients (square moduli)"
+#endif
                                plan = fftw_plan_dft_r2c_2d(M-1, L-1, h_xy, ck_xy, FFTW_MEASURE)
 
                                ! Wave vectors of the Fourier sum
                                ! In general: k_(x,y) = (i,j) * 2*pi/L_(x,y)
+#ifdef _VERBOSE_FFT
+    write(error_unit,*) "DEBUG ON, VERBOSE OUT: building k-point grid"
+#endif
                                do i=1,L-1
                                   k_x(i) = (i-1) * 2*pi/box_length(1)
                                end do
@@ -115,6 +125,10 @@
                                   k_y(j) = (j-1) * 2*pi/box_length(2)
                                end do
 
+#ifdef _VERBOSE_FFT
+    write(error_unit,*) "DEBUG ON, VERBOSE OUT: k-point grid done."
+    write(error_unit,*) "Now saving profile height as Z-coordinate of the surface BETWEEN grid points (surf2)"
+#endif
                                ! Profile height of the surface at current frame
                                forall (i=1:L-1, j=1:M-1)
                                    h_xy(i,j) = surf2(i,j,1,3) 
@@ -125,6 +139,9 @@
                                
                                write(6,'(a,i8)') "Computing Fourier transform at frame ", frame
  
+#ifdef _VERBOSE_FFT
+    write(error_unit,*) "DEBUG ON, VERBOSE OUT: calling FFT routine and computing the square moduli."
+#endif
                                call fftw_execute_dft_r2c(plan, h_xy, ck_xy)
 
                                ! Compute the square modulus of each Fourier coefficients
@@ -142,6 +159,9 @@
                                !!!   write(999,*) "*************************"
                                !!!end if
 
+#ifdef _VERBOSE_FFT
+    write(error_unit,*) "DEBUG ON, VERBOSE OUT: accumulating average of Fourier coefficient at this frame."
+#endif
                                ck_averaged(:,:) = ck_averaged(:,:) + ck_xy_r(:,:)
                                
 
@@ -171,7 +191,7 @@
     close(dat)
     close(f_wat)
     close(f_sur)
-    close(f_fft)
+    if (compute_fft) close(f_fft)
     
     deallocate( atoms, surf, surf2, gradient, mixed, ck_averaged, h_xy, ck_xy, ck_xy_r, k_x, k_y)
     
@@ -251,8 +271,8 @@
                         call set_default(file_water, 'wrap_traj.xyz')
                         call set_default(file_surface, 'surface.out')
                     
-                    write(output_unit,'(3x,a)', advance='no') "Stride [0 for default] >> "
-                    read(input_unit,*) stride
+                    write(output_unit,'(3x,a)', advance='no') "Frames: START END STRIDE [default: 1,-1,1] >> "
+                    read(input_unit,*) iframe, fframe, stride
                         if (stride == 0) stride = 1
                     
                     write(output_unit,'(3x,a)', advance='no') "Box size (lx ly lz) >> "
@@ -286,17 +306,17 @@
                 
                     write(output_unit,'(a,/)') "Surface.x is in batch mode... reading from standard input"
                     
-                    read(input_unit,*) dname, normal_is, file_water, file_surface, stride, box_length(:), &
+                    read(input_unit,*) dname, normal_is, file_water, file_surface, iframe, fframe, stride, box_length(:), &
                                       & contour, xi, grid_spacing, fft_answer, file_fft
 
-20 format(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i10,a,/,3x,a,3f10.5,/,3x,a,f10.5,/,3x,a,f5.3,/,3x,a,f5.3,a,/,3x,2a,/,3x,2a,/)
+20 format(a,/,3x,2a,/,3x,3a,/,3x,4a,/,3x,a,i6,a,i6,a,i3,a,/,3x,a,3f10.5,/,3x,a,f10.5,/,3x,a,f5.3,/,3x,a,f5.3,a,/,3x,2a,/,3x,2a,/)
 
                     write(output_unit,20) & 
                         & "Willard-Chandler surface will be computed according to the following input:", &
                         & "Input trajectory: ", to_upper(trim(dname)), &
                         & "Interface normal along ", to_upper(normal_is), " axis", &
                         & "Output files: ", to_upper(trim(file_water)), " and ", to_upper(trim(file_surface)), &
-                        & "Processing every ", stride, " frames", &
+                        & "Analyzing input trajectory from frame ",iframe," to ",fframe," every ", stride, " frame", &
                         & "Simulation box size: ", box_length(:), &
                         & "Value of the CONTOUR where to draw the surface: ", contour, &
                         & "Bandwidth of the Gaussian kernel: ", xi, & 
@@ -374,7 +394,7 @@
                         & "   -> Input trajectory filename (XYZ file)", &
                         & "   -> Interface normal along [x/y/z] axis", &
                         & "   -> Output files: wrapped trajectory, surface plot", &
-                        & "   -> Stride of processing input trajectory", &
+                        & "   -> Frames: START END STRIDE", &
                         & "   -> Simulation box size (3 numbers, SPACE separated)", &
                         & "   -> Value of the CONTOUR where to draw the surface", &
                         & "   -> Bandwidth of the Gaussian kernel", & 

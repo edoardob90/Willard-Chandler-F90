@@ -13,12 +13,14 @@
         f_sur = 9
         f_dist = 10
         f_fft = 11
-    ! Find number of lines in file, store as num_frames:
+    ! Input file
+        open(dat, file=trim(adjustl(dname)), status='old', action='read')
+    ! Output stuff
         open(f_wat, file=trim(adjustl(file_water)), status='unknown', action='readwrite')
         open(f_sur, file=trim(adjustl(file_surface)), status='unknown', action='readwrite')     
-        open(f_fft, file=trim(adjustl(file_fft)), status='unknown', action='readwrite')
-        open(dat, file=trim(adjustl(dname)), status='old', action='read')
+        if (compute_fft) open(f_fft, file=trim(adjustl(file_fft)), status='unknown', action='readwrite')
         
+    ! Find number of lines in file, store as num_frames:
         num_frames = 0
         do
             read(dat,*, iostat=ios)
@@ -91,7 +93,7 @@
 
 ! Write to standard output at the beginning of the frame:
 
-      write(6,'(a,i6,a,i6)') 'Processing frame ',frame,' of ',num_frames
+      write(6,'(a,i6,a,i6)') 'Processing frame ',frame,' of ', fframe
 
 ! Write frame headers to output files:
 
@@ -109,7 +111,7 @@
 
       if (frame > 1) then
           read(dat,*)
-          ! Update the box dimensions if we are in NPT ensemble
+          ! Update the box dimensions if changed from previous frame
           call update_box()
 
           ! Swap box dimensions if the interface is NOT perp. to Z
@@ -177,7 +179,7 @@
         integer :: ios, j
 
         ! Update the box, if it's changed because we're in an NPT ensemble
-        box_length = 0.0d0
+        ! box_length = 0.0d0
         read(dat,*,iostat=ios) (box_length(j), j=1,3)
 
         return

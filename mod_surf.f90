@@ -31,7 +31,7 @@ module mod_surf
 
 ! Input and output:
     character(len=100) :: dname, file_water, file_surface, file_dist, input, input1, file_fft
-    integer :: dat, f_wat, f_sur, f_dist, f_fft, stride
+    integer :: dat, f_wat, f_sur, f_dist, f_fft, stride, iframe, fframe
     !real(DP) :: opref(2) ! the two reference values for the order parameter
     real(DP) :: contour
     logical(LGT) :: normal_along_z, pdb
@@ -75,8 +75,8 @@ module mod_surf
      ximin2 = 1.d0/xi**2.d0
      ximin4 = 1.d0/xi**4.d0
      ninxisq = 9.d0 * xi**2
-     prefac = ((2 * PI_D * xi**2)**(-1.5d0))
-     phi3xi = ( prefac * dexp(-4.5d0))
+     prefac = ((TWOPI_D * xi**2)**(-1.5d0))
+     phi3xi = ( prefac * EXP(-4.5d0))
 
      end subroutine
      

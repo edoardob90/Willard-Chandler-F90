@@ -33,10 +33,12 @@
       x = nint(box_length(1)/2)
       y = nint(box_length(2)/2)
       
-      !print *, "Line 31, calculations.f90"
-      
       !surf(x,y,1,3) = brent( 0.d0, box_length(3)*0.5d0, 1.d-6, surf(x,y,1,1), surf(x,y,1,2), density_field_const )
       !surf(x,y,2,3) = brent(box_length(3)*0.5d0, box_length(3), 1.d-9, surf(x,y,2,1), surf(x,y,2,2), density_field_const)
+
+#ifdef _VERBOSE
+      write(error_unit,'(a)') "DEBUG ON, VERBOSE OUTPUT: finding the surface starting from the point (Lx/2, Ly/2)"
+#endif
       
       surf(x,y,1,3) = zbrent(func=density_field_const, z1=0.0d0, z2=box_length(3)*0.5d0, &
                             & x=surf(x,y,1,1), y=surf(x,y,1,2), &
@@ -46,18 +48,23 @@
                             & tol=1.0d-6)
       
       found(x,y,:) = .true.
-      
-      !print *, "Line 37, calculations.f90"
 
+#ifdef _VERBOSE
+      write(error_unit,'(a)') "DEBUG ON, VERBOSE OUTPUT: surface found at the centre of the box. No error."
+#endif
+      
 ! Then, spreading out from this point, find the surface at different (X,Y) values.
 
+#ifdef _VERBOSE
+      write(error_unit,'(a)') "DEBUG ON, VERBOSE OUTPUT: now spreading from the center to other grid points ..."
+#endif
       xmin = x
       xmax = x
       ymin = y
       ymax = y
       allfound = .false.
 
-      do while (.not. allfound)
+      allsurface: do while (.not. allfound)
        do w=1,2
         do u = xmin-1,xmax+1
          do v=ymin-1,ymax+1
@@ -101,6 +108,9 @@
         enddo
        enddo
 
+#ifdef _VERBOSE
+      write(error_unit,'(a,i3,x,i3,a,i3,x,i3,a)') "DEBUG ON, VERBOSE OUTPUT: surface found for the grid points between X=(",xmin,xmax,") and Y=(",ymin,ymax,")"
+#endif
        xmin = xmin - 1
        xmax = xmax + 1
        ymin = ymin - 1
@@ -113,8 +123,12 @@
          allfound = allfound .and. found(x,y,1) .and. found(x,y,2)
         enddo
        enddo
-      enddo
 
+      end do allsurface
+
+#ifdef _VERBOSE
+    write(error_unit,'(a)') "DEBUG ON, VERBOSE OUTPUT: if this is printed, all the surface has been found at this step. find_surface() went fine!"
+#endif
       return
 
     end subroutine
