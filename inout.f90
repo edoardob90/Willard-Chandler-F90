@@ -16,9 +16,9 @@
     ! Input file
         open(dat, file=trim(adjustl(dname)), status='old', action='read')
     ! Output stuff
-        open(f_wat, file=trim(adjustl(file_water)), status='unknown', action='readwrite')
-        open(f_sur, file=trim(adjustl(file_surface)), status='unknown', action='readwrite')     
-        if (compute_fft) open(f_fft, file=trim(adjustl(file_fft)), status='unknown', action='readwrite')
+        open(f_wat, file=trim(adjustl(file_water)), status='replace', action='write')
+        open(f_sur, file=trim(adjustl(file_surface)), status='replace', action='write')     
+        if (compute_fft) open(f_fft, file=trim(adjustl(file_fft)), status='replace', action='write')
         
     ! Find number of lines in file, store as num_frames:
         num_frames = 0

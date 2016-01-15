@@ -17,12 +17,6 @@
 
       found = .false.
 
-      ! Initialize surface relative matrices
-      surf = 0.d0
-      h_xy = 0.0d0
-      ck_xy = (0.0d0,0.0d0)
-      ck_xy_r = 0.d0
-      
       do x=1,coord(1)
        do y=1,coord(2)
         surf(x,y,:,1) = (x-1)*gspacing(1)
@@ -43,6 +37,7 @@
       surf(x,y,1,3) = zbrent(func=density_field_const, z1=0.0d0, z2=box_length(3)*0.5d0, &
                             & x=surf(x,y,1,1), y=surf(x,y,1,2), &
                             & tol=1.0d-6)
+      ! Second surface (PBC)
       surf(x,y,2,3) = zbrent(func=density_field_const, z1=box_length(3)*0.5d0, z2=box_length(3), &
                             & x=surf(x,y,2,1), y=surf(x,y,2,2), &
                             & tol=1.0d-6)
@@ -65,9 +60,11 @@
       allfound = .false.
 
       allsurface: do while (.not. allfound)
-       do w=1,2
-        do u = xmin-1,xmax+1
-         do v=ymin-1,ymax+1
+       !do w=1,2 ! Surface index. We have always 2 surfaces because of PBC
+       ! WE WILL SEEK FOR JUST ONE SURFACE, so w=1
+       w=1
+        do u = xmin-1,xmax+1 ! Grid point in x direction
+         do v=ymin-1,ymax+1  ! Grid point in y direction
           if ((u .ge. 1) .and. (u .le. coord(1)) .and. (v .ge. 1) .and. (v .le. coord(2))) then
               if (.not. found(u,v,w)) then
 
@@ -106,24 +103,35 @@
           endif
          enddo
         enddo
-       enddo
+       ! enddo ! (over w)
 
-#ifdef _VERBOSE
-      write(error_unit,'(a,i3,x,i3,a,i3,x,i3,a)') "DEBUG ON, VERBOSE OUTPUT: surface found for the grid points between X=(",xmin,xmax,") and Y=(",ymin,ymax,")"
-#endif
        xmin = xmin - 1
        xmax = xmax + 1
        ymin = ymin - 1
        ymax = ymax + 1
 
 ! Check to see if all of the surface has been found:
+#ifdef _VERBOSE
+       write(error_unit,*) "DEBUG ON, VERBOSE OUTPUT: checking if all the surface has been found ..."
+       allfound = .true.
+       write(error_unit,*) "       value of 'allfound'= ", allfound
+       do x=1,coord(1)
+        do y=1,coord(2)
+           write(error_unit, '(4x,"checking for grid point x= ",i3,", y= ",i3)') x,y
+           write(error_unit, '(4x,"for x= ",i3,", y= ",i3," found is ",l)') x,y,found(x,y,1)
+           allfound = allfound .and. found(x,y,1) !.and. found(x,y,2)
+           write(error_unit,*) "    updated value of 'allfound' ", allfound
+           write(error_unit,*)
+        enddo
+       enddo
+#else
        allfound = .true.
        do x=1,coord(1)
         do y=1,coord(2)
-         allfound = allfound .and. found(x,y,1) .and. found(x,y,2)
+         allfound = allfound .and. found(x,y,1) !.and. found(x,y,2)
         enddo
        enddo
-
+#endif
       end do allsurface
 
 #ifdef _VERBOSE
@@ -226,7 +234,7 @@
     integer :: x,y,j
 
 ! Draw the surface at the grid points:
-10 format('Cl',3x,f20.10,3x,f20.10,3x,f20.10)
+10 format('X',3x,f15.6,3x,f15.6,3x,f15.6)
 
      do x=1,coord(1)
       do y=1,coord(2)
@@ -234,10 +242,10 @@
      &      .and. (surf(x,y,1,3) .eq. 0.d0))) then
               write(f_sur,10) ( surf(x,y,1,j), j=1,3 )
         endif
-        if (.not. ((surf(x,y,2,1) .eq. 0.d0) .and. (surf(x,y,2,2) .eq. 0.d0) &
-     &      .and. (surf(x,y,2,3) .eq. 0.d0))) then
-              !write(f_sur,10) (surf(x,y,2,j), j=1,2), surf(x,y,2,3) - box_length(3)
-        endif
+     !   if (.not. ((surf(x,y,2,1) .eq. 0.d0) .and. (surf(x,y,2,2) .eq. 0.d0) &
+     !&      .and. (surf(x,y,2,3) .eq. 0.d0))) then
+     !         !write(f_sur,10) (surf(x,y,2,j), j=1,2), surf(x,y,2,3) - box_length(3)
+     !   endif
       enddo
      enddo
 

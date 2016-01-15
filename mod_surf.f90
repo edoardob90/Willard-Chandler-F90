@@ -87,10 +87,11 @@ module mod_surf
 
      real(DP) :: rsq
 
-     if (rsq > ninxisq) then
-      phi = 0.d0
-      return
-     endif
+     ! Cutoff for Gauss kernel
+     !if (rsq > ninxisq) then
+     ! phi = 0.d0
+     ! return
+     !endif
 
      phi = ( prefac * EXP(-0.5d0 * rsq / xi**2 )) !- phi3xi
 

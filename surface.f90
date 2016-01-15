@@ -80,20 +80,28 @@
                                call startio_frame(frame)
                                
                          
-                         ! Find the constant, const, and find the surface in terms of (x,y) grid points:
-                         
-                         !!! Value of the CONST already set by CONTOUR
-                         ! const should be: opref(liquid)+opref(solid)/2
-                         !      const = SUM(opref)/2
-                               
+                         ! Call the main subroutine to find the surface. Firstly initialize array at this frame
+#ifdef _VERBOSE
+    write(error_unit,*) "DEBUG ON, VERBOSE OUT: initiliazing surf matrix to 0.0 and calling find_surface() routine ..."
+#endif
+                               surf = 0.0d0
                                call find_surface()
                          
                          ! Find the gradient and the mixed terms, and interpolate between grid points to draw the
                          ! surface as a smooth function, in terms of triangles:
                          
+#ifdef _VERBOSE
+    write(error_unit,*) "DEBUG ON, VERBOSE OUT: interpolating surface in-between grid points ..."
+#endif
+                         ! Initialize array for surface interpolation
+                               surf2 = 0.0d0
+                         ! Find interpolation
                                call find_terms_int()
-                               
+                         ! Interpolate and write out surface to output
                                call triangles()
+#ifdef _VERBOSE
+    write(error_unit,*) "DEBUG ON, VERBOSE OUT: surface found and written to output for this frame!"
+#endif
 
                                
                          !!! PART TWO: Fourier transform of the height profile of the interface !!!
@@ -105,12 +113,21 @@
                          !  z = height of the surface at the corresponding grid point
 
                          fft_compute: if (compute_fft) then
+                             
+                             ! Initialize matrix for FFT
+                                h_xy = 0.0d0
+                                ck_xy = (0.0d0,0.0d0)
+                                ck_xy_r = 0.d0
+
+
 #ifdef _VERBOSE_FFT
     write(error_unit,*) "DEBUG ON, VERBOSE OUT: creating plan for FFT. Arrays has the following dimensions:"
-    write(error_unit,*) "h_xy: (", SHAPE(h_xy),")", "   -> surface profile matrix"
-    write(error_unit,*) "ck_xy: (", SHAPE(ck_xy),")", "   -> matrix of complex Fourier coefficients"
-    write(error_unit,*) "ck_xy_r: (", SHAPE(ck_xy_r),")", "   -> matrix of real Fourier coefficients (square moduli)"
+    write(error_unit,*) "h_xy: (", SHAPE(h_xy),")"
+    write(error_unit,*) "ck_xy: (", SHAPE(ck_xy),")"
+    write(error_unit,*) "ck_xy_r: (", SHAPE(ck_xy_r),")"
 #endif
+
+                            ! Plan
                                plan = fftw_plan_dft_r2c_2d(M-1, L-1, h_xy, ck_xy, FFTW_MEASURE)
 
                                ! Wave vectors of the Fourier sum
@@ -119,10 +136,10 @@
     write(error_unit,*) "DEBUG ON, VERBOSE OUT: building k-point grid"
 #endif
                                do i=1,L-1
-                                  k_x(i) = (i-1) * 2*pi/box_length(1)
+                                  k_x(i) = (i-1) * 2*PI_D/box_length(1)
                                end do
                                do j=1,M-1
-                                  k_y(j) = (j-1) * 2*pi/box_length(2)
+                                  k_y(j) = (j-1) * 2*PI_D/box_length(2)
                                end do
 
 #ifdef _VERBOSE_FFT

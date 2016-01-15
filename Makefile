@@ -9,7 +9,7 @@ LDFLAGS=
 # Switches for debug mode
 ifneq ($(DEBUG),)
 	CPPFLAGS:=-D_VERBOSE $(CPPFLAGS)
-	FFLAGS=-C -O0 -g -traceback -fpe0 -ftrapuv -fpp
+	FFLAGS=-O1 -g -traceback -fpe0 -ftrapuv -fpp
 else
 	CPPFLAGS=
 	FFLAGS=-fpp -O3 -xHost -ipo
@@ -18,7 +18,7 @@ endif
 # Debug just FFT
 ifeq (fft,$(findstring $(DEBUG),fft))
 	CPPFLAGS:=-D_VERBOSE_FFT $(CPPFLAGS)
-	FFLAGS=-C -O0 -g -traceback -fpe0 -ftrapuv -fpp
+	FFLAGS=-O1 -g -traceback -fpe0 -ftrapuv -fpp
 endif
 
 # Create a dependency list using makedepf90.  All files  
